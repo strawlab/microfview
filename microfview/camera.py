@@ -11,7 +11,7 @@ logger = logging.getLogger('microfview')
 class CameraCapture(cam_iface.Camera):
 
     def __init__(self, device_num=0, mode_num=None,
-                 num_buffers=30, trigger_mode=None, roi=None):
+                 num_buffers=30, trigger_mode=None, roi=None, prop_config={}):
         """class for interfacing cam_iface cameras.
 
         Args:
@@ -54,6 +54,19 @@ class CameraCapture(cam_iface.Camera):
             actual_roi = self.get_frame_roi()
             if roi != actual_roi:
                 raise ValueError("could not set ROI. Actual ROI is %s." % (actual_roi,))
+
+        # set the properties
+        for prop_num in range(self.get_num_camera_properties()):
+            prop_info = self.get_camera_property_info(prop_num)
+            _name = prop_info['name']
+            if _name in prop_config:
+                _val = prop_config[_name]
+                self.set_camera_property(prop_num, _val, False)
+                logger.info("setting %s to: %f, MANUAL", _name, _val)
+            else:
+                _val, _auto = self.get_camera_property(prop_num)
+                _auto = 'AUTO' if _auto else 'MANUAL'
+                logger.info("leaving %s at: %f, %s", _name, _val, _auto)
 
         # set errors which can be ignored by the microfview mainloop
         self.noncritical_errors = (cam_iface.FrameDataMissing,
