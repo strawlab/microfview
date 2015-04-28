@@ -18,7 +18,7 @@ def _has_method(obj, method):
 
 class Microfview(threading.Thread):
 
-    def __init__(self, frame_capture):
+    def __init__(self, frame_capture, flipRL=False, flipUD=False):
         """Microfview main class.
 
         Args:
@@ -45,6 +45,10 @@ class Microfview(threading.Thread):
         self._run = False
         self._callbacks = []
         self._plugins = []
+
+        self._flip = flipRL or flipUD
+        self._slice = (slice(None, None, -1 if flipUD else None),
+                       slice(None, None, -1 if flipRL else None))
 
     def attach_callback(self, callback_func, every=1):
         """Attaches a callback function, which is called on every Nth frame.
@@ -118,6 +122,10 @@ class Microfview(threading.Thread):
                 self.frame_number_current = frame_number
 
                 self.frame_count += 1
+
+                # flip
+                if self._flip:
+                    buf = buf[self._slice]
 
                 now = time.time()
                 # call all attached callbacks.
