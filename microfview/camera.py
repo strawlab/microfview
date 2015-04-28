@@ -11,7 +11,8 @@ logger = logging.getLogger('microfview')
 class CameraCapture(cam_iface.Camera):
 
     def __init__(self, device_num=0, mode_num=None,
-                 num_buffers=30, trigger_mode=None, roi=None, prop_config={}):
+                 num_buffers=30, trigger_mode=None, roi=None, max_framerate=None,
+                 prop_config={}):
         """class for interfacing cam_iface cameras.
 
         Args:
@@ -67,6 +68,10 @@ class CameraCapture(cam_iface.Camera):
                 _val, _auto = self.get_camera_property(prop_num)
                 _auto = 'AUTO' if _auto else 'MANUAL'
                 logger.info("leaving %s at: %f, %s", _name, _val, _auto)
+
+        # set the max framerate
+        if max_framerate is not None:
+            self.set_framerate(max_framerate)
 
         # set errors which can be ignored by the microfview mainloop
         self.noncritical_errors = (cam_iface.FrameDataMissing,
