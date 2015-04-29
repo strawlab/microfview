@@ -72,6 +72,11 @@ class CameraCapture(cam_iface.Camera):
         # set the max framerate
         if max_framerate is not None:
             self.set_framerate(max_framerate)
+            logger.info("setting max framerate to: %f", max_framerate)
+        else:
+            fr = self.get_framerate()
+            logger.info("leaving max framerate at: %f", fr)
+
 
         # set errors which can be ignored by the microfview mainloop
         self.noncritical_errors = (cam_iface.FrameDataMissing,
