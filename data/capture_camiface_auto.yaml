@@ -1,0 +1,8 @@
+capture: {
+    use_opencv: false,
+    device_num: 0,
+    prop_config: {
+        shutter: -1,    #set to auto brightness
+        gain: -1,
+        },
+}

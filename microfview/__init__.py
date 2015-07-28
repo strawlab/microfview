@@ -38,16 +38,6 @@ from .plugin import BlockingPlugin, NonBlockingPlugin, PluginFinished
 from .capture.cameracamiface import CamifaceCapture
 from .capture.videofmf import FMFCapture
 from .capture import get_capture_object
+from .util import get_logger, parse_config_file
 
-import logging
 
-def getLogger():
-    """returns the global microfview logging.Logger instance"""
-    # setup logging
-    logger = logging.getLogger('microfview')
-    logger.setLevel(logging.INFO)
-    h = logging.StreamHandler()
-    f = logging.Formatter("%(levelname)s %(asctime)s %(funcName)s %(lineno)d %(message)s")
-    h.setFormatter(f)
-    logger.addHandler(h)
-    return logger
