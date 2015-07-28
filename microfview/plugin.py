@@ -20,6 +20,8 @@ import time
 import logging
 logger = logging.getLogger('microfview')
 
+class PluginFinished(Exception):
+    pass
 
 class BlockingPlugin(object):
 
@@ -32,6 +34,7 @@ class BlockingPlugin(object):
         """
         self.logger = logger
         self.every = int(every)
+        self.finished = False
 
     def start(self):
         """compatibility function."""
@@ -72,6 +75,7 @@ class NonBlockingPlugin(threading.Thread):
         self._idle_wait = float(max_start_delay_sec)
         self.callargs = (None, None, None)
         self.every = int(every)
+        self.finished = False
 
     def stop(self):
         """stop the worker thread."""
@@ -99,7 +103,7 @@ class NonBlockingPlugin(threading.Thread):
         """worker mainloop."""
         logger.info("starting worker")
         self._run = True
-        while True:
+        while not self.finished:
             with self._lock:
                 frame_available = self._frame_available
                 if not self._run:
@@ -110,6 +114,8 @@ class NonBlockingPlugin(threading.Thread):
                 continue
             try:
                 self.process_frame(*self.callargs)
+            except PluginFinished:
+                self.finished = True
             except:
                 logger.exception("error in process_frame")
             with self._lock:

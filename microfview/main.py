@@ -11,6 +11,8 @@ import time
 import logging
 logger = logging.getLogger('microfview')
 
+from .plugin import PluginFinished
+
 # helper function for frame_capture checks
 def _has_method(obj, method):
     return hasattr(obj, method) and callable(getattr(obj, method))
@@ -49,6 +51,8 @@ class Microfview(threading.Thread):
         self._flip = flipRL or flipUD
         self._slice = (slice(None, None, -1 if flipUD else None),
                        slice(None, None, -1 if flipRL else None))
+
+        self.finished = False
 
     def attach_callback(self, callback_func, every=1):
         """Attaches a callback function, which is called on every Nth frame.
@@ -127,11 +131,21 @@ class Microfview(threading.Thread):
                 if self._flip:
                     buf = buf[self._slice]
 
+                finished_callback_handles = []
                 now = time.time()
                 # call all attached callbacks.
                 for n, cb in self._callbacks:
                     if self.frame_number_current % n == 0:
-                        cb(frame_timestamp, now, buf)
+                        try:
+                            cb(frame_timestamp, now, buf)
+                        except PluginFinished:
+                            finished_callback_handles.append((n, cb))
+
+                for handle in finished_callback_handles:
+                    self.detach_callback(handle)
+
+                if not self._callbacks:
+                    self.stop()
 
                 with self._lock:
                     if not self._run:
@@ -141,6 +155,8 @@ class Microfview(threading.Thread):
             # stop the plugins
             for plugin in self._plugins:
                 plugin.stop()
+
+        self.finished = True
 
     def stop(self):
         """stop the mainloop."""

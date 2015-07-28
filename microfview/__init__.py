@@ -36,7 +36,7 @@ __version__ = "0.1"
 from .main import Microfview
 from .camera import CameraCapture
 from .video import FMFCapture
-from .plugin import BlockingPlugin, NonBlockingPlugin
+from .plugin import BlockingPlugin, NonBlockingPlugin, PluginFinished
 
 import logging
 
