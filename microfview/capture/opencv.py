@@ -11,10 +11,13 @@ import logging
 def decode_4cc(capture):
     prop = getattr(cv2,'CAP_PROP_FOURCC',6) #keep compat with OpenCV < 3.0
     fourcc = int(capture.get(prop))
-    return "%c%c%c%c" % (chr(fourcc & 255),
-                         chr((fourcc >> 8) & 255),
-                         chr((fourcc >> 16) & 255),
-                         chr((fourcc >> 24) & 255))
+    if fourcc > 0:
+        return "%c%c%c%c" % (chr(fourcc & 255),
+                             chr((fourcc >> 8) & 255),
+                             chr((fourcc >> 16) & 255),
+                             chr((fourcc >> 24) & 255))
+    else:
+        return "????"
 
 class OpenCVCapture(object):
 
