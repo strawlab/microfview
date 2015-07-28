@@ -1,17 +1,39 @@
 import os.path
+import logging
+
+logger = logging.getLogger('microfview.capture')
 
 def get_capture_object(desc, **options):
     desc = desc or ''   #remove None
+    try:
+        use_opencv = options.pop('use_opencv')
+    except KeyError:
+        use_opencv = True
+
     if os.path.isfile(desc):
         if desc.endswith('.fmf'):
+            logging.info('Opening FMF file using motmot')
             from .videofmf import FMFCapture
             return FMFCapture(desc, **options)
         else:
+            logging.info('Opening video file using OpenCV')
             from .opencv import OpenCVCapture
             return OpenCVCapture(desc)
-    elif desc.startswith('/dev/video'):
-        raise Exception("opencv device not implemented")
+
+    if desc.startswith('/dev/video'):
+        logging.info('Opening video device %s using OpenCV' % desc)
+        from .opencv import OpenCVCapture
+        return OpenCVCapture(desc, **options)
+    elif use_opencv:
+        try:
+            device_num = int(options['device_num'])
+        except KeyError:
+            device_num = 0
+        logging.info('Opening video device #%d using OpenCV' % device_num)
+        from .opencv import OpenCVCapture
+        return OpenCVCapture(device_num, **options)
     else:
+        logging.info('Opening camiface camera')
         from .cameracamiface import CamifaceCapture
         return CamifaceCapture(**options)
         

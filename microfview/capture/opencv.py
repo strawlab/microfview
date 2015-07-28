@@ -21,7 +21,7 @@ def decode_4cc(capture):
 
 class OpenCVCapture(object):
 
-    def __init__(self, filename):
+    def __init__(self, filename, **prop_config):
         """class for using opencv VideoCapture objects
 
         Args:
