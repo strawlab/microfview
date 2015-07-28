@@ -34,9 +34,10 @@ Example:
 __version__ = "0.1"
 
 from .main import Microfview
-from .camera import CameraCapture
-from .video import FMFCapture
 from .plugin import BlockingPlugin, NonBlockingPlugin, PluginFinished
+from .capture.cameracamiface import CamifaceCapture
+from .capture.videofmf import FMFCapture
+from .capture import get_capture_object
 
 import logging
 

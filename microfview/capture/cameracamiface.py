@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger('microfview')
 
 
-class CameraCapture(cam_iface.Camera):
+class CamifaceCapture(cam_iface.Camera):
 
     def __init__(self, device_num=0, mode_num=None,
                  num_buffers=30, trigger_mode=None, roi=None, max_framerate=None,
