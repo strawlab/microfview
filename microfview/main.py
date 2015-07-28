@@ -69,7 +69,7 @@ class Microfview(threading.Thread):
         """Attaches a callback function, which is called on every Nth frame.
 
         Args:
-          callback_func:  takes two parameters (buffer and timestamp)
+          callback_func:  takes three parameters (frame_timestamp, now, buf)
           every:  integer > 0
 
         returns:
