@@ -14,6 +14,7 @@ class DisplayPlugin(BlockingPlugin):
         cv2.imshow('micro-fview', frame)
         ch = 0xFF & cv2.waitKey(1)
         if ch == 27:
+            cv2.destroyWindow('micro-fview')
             raise PluginFinished()
 
 if __name__ == "__main__":
