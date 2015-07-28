@@ -33,10 +33,10 @@ Example:
 
 __version__ = "0.1"
 
-from ros_strokelitude3.microfview.main import Microfview
-from ros_strokelitude3.microfview.camera import CameraCapture
-from ros_strokelitude3.microfview.video import FMFCapture
-from ros_strokelitude3.microfview.plugin import BlockingPlugin, NonBlockingPlugin
+from .main import Microfview
+from .camera import CameraCapture
+from .video import FMFCapture
+from .plugin import BlockingPlugin, NonBlockingPlugin
 
 import logging
 
