@@ -2,11 +2,11 @@
 
 import sys
 import time
-import logging
+import argparse
 
 import cv2
 
-from microfview import Microfview, BlockingPlugin, PluginFinished, get_capture_object
+from microfview import Microfview, BlockingPlugin, PluginFinished, get_capture_object, parse_config_file
 
 class DisplayPlugin(BlockingPlugin):
 
@@ -18,14 +18,21 @@ class DisplayPlugin(BlockingPlugin):
             raise PluginFinished()
 
 if __name__ == "__main__":
+    import logging
+    import argparse
+
     logging.basicConfig(level=logging.INFO)
 
-    try:
-        fn = sys.argv[1]
-    except IndexError:
-        fn = ''
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('capture', default='', nargs='?', type=str,
+                        help='path to a video file or capture hardware device')
+    parser.add_argument('--config', type=str,
+                        help='path to a configuration file')
+    args = parser.parse_args()
 
-    cam = get_capture_object(fn)
+    conf = parse_config_file(args.config)
+
+    cam = get_capture_object(args.capture, **conf['capture'])
     fview = Microfview(cam)
     fview.attach_plugin(DisplayPlugin())
 
