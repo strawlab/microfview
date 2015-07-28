@@ -30,6 +30,9 @@ class OpenCVCapture(object):
         self._log = logging.getLogger('microfview.capture.OpenCVCapture')
 
         self._capture = cv2.VideoCapture(filename)
+        if not self._capture.isOpened():
+            raise Exception("Unable to open %s" % filename)
+
         self._frame_timestamp = 0.0
         self._frame_number = -1
         self.noncritical_errors = tuple()
@@ -39,8 +42,6 @@ class OpenCVCapture(object):
     def grab_next_frame_blocking(self):
         """returns next frame."""
         flag, frame = self._capture.read()
-        if not flag:
-            raise Exception('No data')
         self._frame_timestamp = time.time()
         self._frame_number += 1
         return frame
