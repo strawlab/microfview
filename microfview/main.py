@@ -7,6 +7,7 @@ and delegates frames to all plugins.
 import bisect
 import threading
 import time
+import collections
 
 import logging
 logger = logging.getLogger('microfview')
@@ -48,11 +49,21 @@ class Microfview(threading.Thread):
         self._callbacks = []
         self._plugins = []
 
+        self._callback_names = {}
+        self._profile = None
+
         self._flip = flipRL or flipUD
         self._slice = (slice(None, None, -1 if flipUD else None),
                        slice(None, None, -1 if flipRL else None))
 
         self.finished = False
+
+    def attach_profiler(self, callback_func):
+        """Attaches a function to be called after every iteration that
+        is passed a dictionary showing how long each plugin took to execute"""
+        if not hasattr(callback_func, '__call__'):
+            raise TypeError("callback_func has to be callable")
+        self._profile = callback_func
 
     def attach_callback(self, callback_func, every=1):
         """Attaches a callback function, which is called on every Nth frame.
@@ -74,6 +85,19 @@ class Microfview(threading.Thread):
         if handle in self._callbacks:
             raise ValueError("callback_func, every combination exist.")
         bisect.insort(self._callbacks, handle)
+
+        #get a readable name for the plugin
+        cb_name = callback_func.func_name
+        if cb_name == "push_frame":
+            #the class name is more interesting as this is a plugin
+            try:
+                #classes can provide identifiers
+                cb_name = callback_func.im_self.identifier
+            except AttributeError:
+                #otherwise the class name will do
+                cb_name = callback_func.im_class.__name__
+        self._callback_names[callback_func] = cb_name
+
         return handle
 
     def detach_callback(self, handle):
@@ -108,7 +132,13 @@ class Microfview(threading.Thread):
             plugin.start()
         self._run = True
         try:
+
+            execution_times = collections.OrderedDict({n:time.time() for n in self._callback_names.values()})
+            execution_times['TOTAL'] = time.time()
+
             while True:
+                now0 = time.time()
+
                 # grab frame
                 try:
                     buf = self.frame_capture.grab_next_frame_blocking()
@@ -137,12 +167,23 @@ class Microfview(threading.Thread):
                 for n, cb in self._callbacks:
                     if self.frame_number_current % n == 0:
                         try:
+                            t0 = time.time()
                             cb(frame_timestamp, now, buf)
+                            t1 = time.time()
+
+                            cn = self._callback_names[cb]
+                            execution_times[cn] = t1 - t0
+
                         except PluginFinished:
                             finished_callback_handles.append((n, cb))
 
+                if self._profile is not None:
+                    execution_times['TOTAL'] = time.time() - now0
+
                 for handle in finished_callback_handles:
                     self.detach_callback(handle)
+                    cn = self._callback_names[handle[1]]
+                    execution_times.pop(cn)
 
                 if not self._callbacks:
                     self.stop()
@@ -151,6 +192,10 @@ class Microfview(threading.Thread):
                     if not self._run:
                         logger.info("exiting main loop")
                         break
+
+                if self._profile is not None:
+                    self._profile(execution_times)
+
         finally:
             # stop the plugins
             for plugin in self._plugins:
