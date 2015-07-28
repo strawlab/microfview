@@ -39,6 +39,8 @@ class OpenCVCapture(object):
     def grab_next_frame_blocking(self):
         """returns next frame."""
         flag, frame = self._capture.read()
+        if not flag:
+            raise Exception('No data')
         self._frame_timestamp = time.time()
         self._frame_number += 1
         return frame
