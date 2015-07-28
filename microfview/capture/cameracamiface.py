@@ -62,8 +62,13 @@ class CamifaceCapture(cam_iface.Camera):
             _name = prop_info['name']
             if _name in prop_config:
                 _val = prop_config[_name]
-                self.set_camera_property(prop_num, _val, False)
-                logger.info("setting %s to: %f, MANUAL", _name, _val)
+                if _val < 0 and prop_info['has_auto_mode']:
+                    _auto = True
+                else:
+                    _auto = False
+                self.set_camera_property(prop_num, _val, _auto)
+                _auto = 'AUTO' if _auto else 'MANUAL'
+                logger.info("setting %s to: %f, %s", _name, _val, _auto)
             else:
                 _val, _auto = self.get_camera_property(prop_num)
                 _auto = 'AUTO' if _auto else 'MANUAL'
