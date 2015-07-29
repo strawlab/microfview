@@ -16,22 +16,23 @@ NonBlockingPlugin:
 """
 import threading
 import time
-
 import logging
-logger = logging.getLogger('microfview')
+
 
 class PluginFinished(Exception):
     pass
 
 class _Plugin(object):
 
-    def __init__(self, every=1):
+    def __init__(self, every=1, logger=None):
         """BlockingPlugin.
 
         Args:
           every (int): process_frame gets called every Nth frame.
 
         """
+        if logger is None:
+            logger = logging.getLogger('microfview')
         self.logger = logger
         self.every = int(every)
         self.finished = False
@@ -57,7 +58,7 @@ class BlockingPlugin(_Plugin):
 
 class NonBlockingPlugin(_Plugin, threading.Thread):
 
-    def __init__(self, every=1, max_start_delay_sec=0.001):
+    def __init__(self, every=1, max_start_delay_sec=0.001, logger=None):
         """NonBlockingPlugin.
 
         Starts a worker thread that listens for incoming frames.
@@ -68,7 +69,7 @@ class NonBlockingPlugin(_Plugin, threading.Thread):
             timescale. Defaults to 0.001 sec.
 
         """
-        _Plugin.__init__(self, every)
+        _Plugin.__init__(self, every, logger)
         threading.Thread.__init__(self)
         self.daemon = True
         self._frame_available = False
