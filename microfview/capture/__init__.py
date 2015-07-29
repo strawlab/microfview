@@ -37,4 +37,20 @@ def get_capture_object(desc, **options):
         from .cameracamiface import CamifaceCapture
         return CamifaceCapture(**options)
         
-    
+class CaptureBase(object):
+
+    fps = None
+
+    frame_count = None
+    frame_width = None
+    frame_height = None
+    frame_shape = None
+
+    is_video_file = None
+
+    def seek_frame(self, n):
+        raise NotImplementedError
+
+    def grab_frame_n(self, n):
+        raise NotImplementedError
+
