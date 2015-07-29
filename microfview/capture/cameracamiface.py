@@ -53,8 +53,13 @@ class CamifaceCapture(cam_iface.Camera):
         if roi is not None:
             self.set_frame_roi(*roi)
             actual_roi = self.get_frame_roi()
-            if roi != actual_roi:
+            if roi == actual_roi:
+                self.frame_width, self.frame_height = roi
+            else:
                 raise ValueError("could not set ROI. Actual ROI is %s." % (actual_roi,))
+        else:
+            self.frame_width = self.get_max_width()
+            self.frame_height = self.get_max_height()
 
         # set the properties
         for prop_num in range(self.get_num_camera_properties()):
@@ -86,3 +91,17 @@ class CamifaceCapture(cam_iface.Camera):
         # set errors which can be ignored by the microfview mainloop
         self.noncritical_errors = (cam_iface.FrameDataMissing,
                                    cam_iface.FrameSystemCallInterruption)
+
+
+        #properties expected by the CaptureBase class
+        self.fps = self.get_framerate()
+        self.frame_shape = (self.frame_width,self.frame_height)
+        self.is_video_file = False
+
+    def grab_frame_n(self, n):
+        raise ValueError("Seeking not available on video devices")
+
+    def seek_frame(self, n):
+        raise ValueError("Seeking not available on video devices")
+
+
