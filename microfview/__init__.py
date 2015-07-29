@@ -35,8 +35,6 @@ __version__ = "0.1"
 
 from .main import Microfview
 from .plugin import BlockingPlugin, NonBlockingPlugin, PluginFinished
-from .capture.cameracamiface import CamifaceCapture
-from .capture.videofmf import FMFCapture
 from .capture import get_capture_object
 from .util import get_logger, parse_config_file
 
