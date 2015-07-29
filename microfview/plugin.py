@@ -23,7 +23,7 @@ logger = logging.getLogger('microfview')
 class PluginFinished(Exception):
     pass
 
-class BlockingPlugin(object):
+class _Plugin(object):
 
     def __init__(self, every=1):
         """BlockingPlugin.
@@ -44,17 +44,18 @@ class BlockingPlugin(object):
         """compatibility function."""
         pass
 
+    def process_frame(self, frame_time, current_time, frame):
+        """override this function."""
+        pass
+
+class BlockingPlugin(_Plugin):
+
     def push_frame(self, *callargs):
         """compatibility function."""
         self.process_frame(*callargs)
         return True
 
-    def process_frame(self, frame_time, current_time, frame):
-        """override this function."""
-        pass
-
-
-class NonBlockingPlugin(threading.Thread):
+class NonBlockingPlugin(_Plugin, threading.Thread):
 
     def __init__(self, every=1, max_start_delay_sec=0.001):
         """NonBlockingPlugin.
@@ -67,15 +68,13 @@ class NonBlockingPlugin(threading.Thread):
             timescale. Defaults to 0.001 sec.
 
         """
-        self.logger = logger
+        _Plugin.__init__(self, every)
         threading.Thread.__init__(self)
         self.daemon = True
         self._frame_available = False
         self._lock = threading.Lock()
         self._idle_wait = float(max_start_delay_sec)
         self.callargs = (None, None, None)
-        self.every = int(every)
-        self.finished = False
 
     def stop(self):
         """stop the worker thread."""
@@ -121,6 +120,3 @@ class NonBlockingPlugin(threading.Thread):
             with self._lock:
                 self._frame_available = False
 
-    def process_frame(self, frame_time, current_time, frame):
-        """override this function."""
-        pass
