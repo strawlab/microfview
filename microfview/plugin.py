@@ -36,7 +36,7 @@ class _Plugin(object):
         self.every = int(every)
         self.finished = False
 
-    def start(self):
+    def start(self, capture_object):
         """compatibility function."""
         pass
 

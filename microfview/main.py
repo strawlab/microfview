@@ -129,7 +129,7 @@ class Microfview(threading.Thread):
         """main loop. do not call directly."""
         # start all plugins
         for plugin in self._plugins:
-            plugin.start()
+            plugin.start(self.frame_capture)
         self._run = True
         try:
 
