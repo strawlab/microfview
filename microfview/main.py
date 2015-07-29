@@ -58,12 +58,12 @@ class Microfview(threading.Thread):
 
         self.finished = False
 
-    def attach_profiler(self, callback_func):
+    def attach_profiler(self, callback_func, *callback_args):
         """Attaches a function to be called after every iteration that
         is passed a dictionary showing how long each plugin took to execute"""
         if not hasattr(callback_func, '__call__'):
             raise TypeError("callback_func has to be callable")
-        self._profile = callback_func
+        self._profile = (callback_func, callback_args)
 
     def attach_callback(self, callback_func, every=1):
         """Attaches a callback function, which is called on every Nth frame.
@@ -194,7 +194,8 @@ class Microfview(threading.Thread):
                         break
 
                 if self._profile is not None:
-                    self._profile(execution_times)
+                    #pass on the callback args
+                    self._profile[0](execution_times, *self._profile[1])
 
         finally:
             # stop the plugins
