@@ -18,7 +18,7 @@ def get_capture_object(desc, **options):
         else:
             logging.info('Opening video file using OpenCV')
             from .opencv import OpenCVCapture
-            return OpenCVCapture(desc)
+            return OpenCVCapture(desc, is_file=True)
 
     if desc.startswith('/dev/video'):
         logging.info('Opening video device %s using OpenCV' % desc)
@@ -31,7 +31,7 @@ def get_capture_object(desc, **options):
             device_num = 0
         logging.info('Opening video device #%d using OpenCV' % device_num)
         from .opencv import OpenCVCapture
-        return OpenCVCapture(device_num, **options)
+        return OpenCVCapture(device_num, is_file=False, **options)
     else:
         logging.info('Opening camiface camera')
         from .cameracamiface import CamifaceCapture
