@@ -130,19 +130,28 @@ class Microfview(threading.Thread):
         # start all plugins
         for plugin in self._plugins:
             plugin.start(self.frame_capture)
+
         self._run = True
         try:
 
             execution_times = collections.OrderedDict({n:time.time() for n in self._callback_names.values()})
             execution_times['TOTAL'] = time.time()
 
-            while True:
+            while self._run:
                 now0 = time.time()
 
                 # grab frame
                 try:
                     buf = self.frame_capture.grab_next_frame_blocking()
-                except self.frame_capture_noncritical_errors:
+                except EOFError as e:
+                    logger.info(e.message)
+                    self.stop()
+                    continue
+                except self.frame_capture_noncritical_errors as e:
+                    logger.exception("error when retrieving frame")
+                    continue
+
+                if buf is None:
                     logger.exception("error when retrieving frame")
                     continue
 
