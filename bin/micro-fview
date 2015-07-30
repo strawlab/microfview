@@ -7,15 +7,7 @@ import argparse
 import cv2
 
 from microfview import Microfview, BlockingPlugin, PluginFinished, get_capture_object, parse_config_file
-
-class DisplayPlugin(BlockingPlugin):
-
-    def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
-        cv2.imshow('micro-fview', frame)
-        ch = 0xFF & cv2.waitKey(1)
-        if ch == 27:
-            cv2.destroyWindow('micro-fview')
-            raise PluginFinished
+from microfview.plugins.display import DisplayPlugin
 
 if __name__ == "__main__":
     import logging
@@ -34,7 +26,7 @@ if __name__ == "__main__":
 
     cam = get_capture_object(args.capture, **conf['capture'])
     fview = Microfview(cam)
-    fview.attach_plugin(DisplayPlugin())
+    fview.attach_plugin(DisplayPlugin('micro-fview', True))
 
     try:
         fview.start()
