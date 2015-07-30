@@ -10,7 +10,7 @@ from microfview import Microfview, BlockingPlugin, PluginFinished, get_capture_o
 
 class DisplayPlugin(BlockingPlugin):
 
-    def process_frame(self, frame_time, current_time, frame):
+    def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         cv2.imshow('micro-fview', frame)
         ch = 0xFF & cv2.waitKey(1)
         if ch == 27:

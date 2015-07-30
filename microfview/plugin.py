@@ -45,7 +45,7 @@ class _Plugin(object):
         """compatibility function."""
         pass
 
-    def process_frame(self, frame_time, current_time, frame):
+    def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         """override this function."""
         pass
 
@@ -53,8 +53,7 @@ class BlockingPlugin(_Plugin):
 
     def push_frame(self, *callargs):
         """compatibility function."""
-        self.process_frame(*callargs)
-        return True
+        return self.process_frame(*callargs)
 
 class NonBlockingPlugin(_Plugin, threading.Thread):
 
@@ -75,7 +74,8 @@ class NonBlockingPlugin(_Plugin, threading.Thread):
         self._frame_available = False
         self._lock = threading.Lock()
         self._idle_wait = float(max_start_delay_sec)
-        self.callargs = (None, None, None)
+        self._callargs = (None, None, None, None, None, None)
+        self._ret = None
 
     def start(self, capture_object):
         threading.Thread.start(self)
@@ -97,10 +97,10 @@ class NonBlockingPlugin(_Plugin, threading.Thread):
         if frame_available:
             return False
         else:
-            self.callargs = callargs
+            self._callargs = callargs
             with self._lock:
                 self._frame_available = True
-            return True
+            return self._ret
 
     def run(self):
         """worker mainloop."""
@@ -109,6 +109,7 @@ class NonBlockingPlugin(_Plugin, threading.Thread):
         while not self.finished:
             with self._lock:
                 frame_available = self._frame_available
+                # also need to copy the args here
                 if not self._run:
                     self.logger.info("exiting worker")
                     break
@@ -116,7 +117,7 @@ class NonBlockingPlugin(_Plugin, threading.Thread):
                 time.sleep(self._idle_wait)
                 continue
             try:
-                self.process_frame(*self.callargs)
+                self._ret = self.process_frame(*self._callargs)
             except PluginFinished:
                 self.finished = True
             except:

@@ -177,8 +177,15 @@ class Microfview(threading.Thread):
                     if self.frame_number_current % n == 0:
                         try:
                             t0 = time.time()
-                            cb(frame_timestamp, now, buf)
+                            ret = cb(buf, frame_number, self.frame_count, frame_timestamp, now, None)
                             t1 = time.time()
+
+                            # if ret is False, the non-blocking plugin was
+                            # still processing the old frame.
+                            # if it is None then the plugin didn't return
+                            # anything useful
+                            # if it is a dictionary then it is state associated with
+                            # that frame
 
                             cn = self._callback_names[cb]
                             execution_times[cn] = t1 - t0
