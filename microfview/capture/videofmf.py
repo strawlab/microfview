@@ -33,7 +33,11 @@ class FMFCapture(fmf.FlyMovie):
 
     def grab_next_frame_blocking(self):
         """returns next frame."""
-        frame, timestamp = self.get_next_frame()
+        try:
+            frame, timestamp = self.get_next_frame()
+        except fmf.NoMoreFramesException as e:
+            if e.message == 'EOF':
+                raise EOFError
         self._frame_timestamp = timestamp
         self._frame_number += 1
         time.sleep(self._frame_delay)
