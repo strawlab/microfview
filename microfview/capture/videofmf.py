@@ -8,7 +8,9 @@ import time
 import logging
 logger = logging.getLogger('microfview')
 
-class FMFCapture(fmf.FlyMovie):
+from . import CaptureBase
+
+class FMFCapture(CaptureBase):
 
     def __init__(self, filename, check_integrity=False, force_framerate=20):
         """class for interfacing fmf videos.
@@ -21,16 +23,28 @@ class FMFCapture(fmf.FlyMovie):
             Defaults to 20.
 
         """
-        fmf.FlyMovie.__init__(self, filename, check_integrity)
+        self._mov = fmf.FlyMovie(filename, check_integrity)
+
         self._frame_timestamp = 0.0
         self._frame_number = -1
-        self.noncritical_errors = tuple()
         self._frame_delay = 1./float(force_framerate)
+
+        #CaptureBase attributes
+        self.frame_count = self._mov.n_frames
+        self.frame_width = self._mov.width
+        self.frame_height = self._mov.height
+        self.is_video_file = True
+
+    def seek_frame(self, n):
+        self._mov.seek(n)
+
+    def grab_frame_n(self, n):
+        return self._mov.get_frame(n, allow_partial_frames=False)
 
     def grab_next_frame_blocking(self):
         """returns next frame."""
         try:
-            frame, timestamp = self.get_next_frame()
+            frame, timestamp = self._mov.get_next_frame(allow_partial_frames=False)
         except fmf.NoMoreFramesException as e:
             if e.message == 'EOF':
                 raise EOFError
