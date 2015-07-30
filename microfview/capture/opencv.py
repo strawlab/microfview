@@ -8,6 +8,8 @@ import cv2
 
 import logging
 
+from . import CaptureBase
+
 def decode_4cc(capture):
     prop = getattr(cv2,'CAP_PROP_FOURCC',6) #keep compat with OpenCV < 3.0
     fourcc = int(capture.get(prop))
@@ -22,7 +24,7 @@ def decode_4cc(capture):
 class VideoDeviceReadError(Exception):
     pass
 
-class OpenCVCapture(object):
+class OpenCVCapture(CaptureBase):
 
     def __init__(self, identifier, is_file, **prop_config):
         """class for using opencv VideoCapture objects
@@ -40,19 +42,18 @@ class OpenCVCapture(object):
 
         self._frame_timestamp = 0.0
         self._frame_number = -1
-        self.noncritical_errors = VideoDeviceReadError,
 
         self._log.info('%s format: %s' % ("file" if is_file else "device",
                                           decode_4cc(self._capture)))
 
+        #CaptureBase attributes
         self.fps = self._capture.get(getattr(cv2,"CAP_PROP_FPS",5))
         self.frame_width = self._capture.get(getattr(cv2,"CAP_PROP_FRAME_WIDTH",3))
         self.frame_height = self._capture.get(getattr(cv2,"CAP_PROP_FRAME_HEIGHT",4))
-        self.frame_shape = (self.frame_width,self.frame_height)
-
         self.is_video_file = is_file
         if is_file:
             self.frame_count = self._capture.get(getattr(cv2,"CAP_PROP_FRAME_COUNT",7))
+        self.noncritical_errors = VideoDeviceReadError,
 
     def _grab_frame_blocking(self, n=None):
         """returns next frame."""
