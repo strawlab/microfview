@@ -8,10 +8,6 @@ import time
 import logging
 logger = logging.getLogger('microfview')
 
-# workaround for microfview compatibility, because ...
-class _NOException(Exception):
-    pass
-
 class FMFCapture(fmf.FlyMovie):
 
     def __init__(self, filename, check_integrity=False, force_framerate=20):
@@ -28,7 +24,7 @@ class FMFCapture(fmf.FlyMovie):
         fmf.FlyMovie.__init__(self, filename, check_integrity)
         self._frame_timestamp = 0.0
         self._frame_number = -1
-        self.noncritical_errors = (_NOException,)  # ... all errors are critical
+        self.noncritical_errors = tuple()
         self._frame_delay = 1./float(force_framerate)
 
     def grab_next_frame_blocking(self):
