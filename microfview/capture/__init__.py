@@ -44,9 +44,14 @@ class CaptureBase(object):
     frame_count = None
     frame_width = None
     frame_height = None
-    frame_shape = None
 
     is_video_file = None
+
+    noncritical_errors = tuple()
+
+    @property
+    def frame_shape(self):
+        return self.frame_width,self.frame_height
 
     def seek_frame(self, n):
         raise NotImplementedError
