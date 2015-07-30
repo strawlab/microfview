@@ -77,6 +77,9 @@ class NonBlockingPlugin(_Plugin, threading.Thread):
         self._idle_wait = float(max_start_delay_sec)
         self.callargs = (None, None, None)
 
+    def start(self, capture_object):
+        threading.Thread.start(self)
+
     def stop(self):
         """stop the worker thread."""
         with self._lock:
@@ -101,13 +104,13 @@ class NonBlockingPlugin(_Plugin, threading.Thread):
 
     def run(self):
         """worker mainloop."""
-        logger.info("starting worker")
+        self.logger.info("starting worker")
         self._run = True
         while not self.finished:
             with self._lock:
                 frame_available = self._frame_available
                 if not self._run:
-                    logger.info("exiting worker")
+                    self.logger.info("exiting worker")
                     break
             if not frame_available:
                 time.sleep(self._idle_wait)
@@ -117,7 +120,7 @@ class NonBlockingPlugin(_Plugin, threading.Thread):
             except PluginFinished:
                 self.finished = True
             except:
-                logger.exception("error in process_frame")
+                self.logger.exception("error in process_frame")
             with self._lock:
                 self._frame_available = False
 
