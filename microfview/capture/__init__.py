@@ -38,7 +38,10 @@ def get_capture_object(desc, **options):
         logging.info('Opening camiface camera')
         from .cameracamiface import CamifaceCapture
         return CamifaceCapture(**options)
-        
+
+class SeekError(Exception):
+    pass
+
 class CaptureBase(object):
 
     fps = None

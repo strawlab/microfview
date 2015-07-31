@@ -2,13 +2,13 @@
 
 Provides FMFCapture class for FlyMovieFormat videos.
 """
-import time
 
 import cv2
+import numpy as np
 
 import logging
 
-from . import CaptureBase
+from . import CaptureBase, SeekError
 
 def decode_4cc(capture):
     prop = getattr(cv2,'CAP_PROP_FOURCC',6) #keep compat with OpenCV < 3.0
@@ -78,7 +78,7 @@ class OpenCVCapture(CaptureBase):
                     #seeking is generally shit. Sometimes we seek to positions
                     #that are past the number of frames in the file, and yet
                     #we get data.
-                    return None
+                    raise SeekError('no data for frame %s' % n)
                 else:
                     #there is not true way for opencv to tell us we are at
                     #the end of file - so add many scary heuristics
@@ -90,12 +90,27 @@ class OpenCVCapture(CaptureBase):
                         raise EOFError("Truncated file at at frame: %d" % frame_number)
             raise VideoDeviceReadError
 
+        if seeking:
+            if n != frame_number:
+                raise SeekError("seek failure requested %s got %s" % (n, frame_number))
+
+            # check we seeked to within one frame (0.5 frame really)
+            # print "SEEK TO fn %s t %s ok %s" % (n, frame_timestamp, (frame_timestamp - (n / self.fps)) < (2. / self.fps))
+
         self._frame_timestamp = frame_timestamp
         self._frame_number = frame_number
 
         return frame
 
     def seek_frame(self, n):
+        """Seeks to the given frame in the files.
+
+        Seeking on random videos is generally risky, so we do some sanity checking.
+        Seeking to n=0 reopens the file (if this wraps a video file)
+
+        :param n: framenumber
+        :return: np.array
+        """
         if self.is_video_file:
             if n == 0:
                 self._capture.release()
