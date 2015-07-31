@@ -1,6 +1,8 @@
 import os.path
 import logging
 
+import numpy as np
+
 logger = logging.getLogger('microfview.capture')
 
 def get_capture_object(desc, **options):
@@ -44,11 +46,11 @@ class SeekError(Exception):
 
 class CaptureBase(object):
 
-    fps = None
+    fps = np.nan
 
-    frame_count = None
-    frame_width = None
-    frame_height = None
+    frame_count = np.nan
+    frame_width = np.nan
+    frame_height = np.nan
 
     is_video_file = None
 
@@ -57,6 +59,10 @@ class CaptureBase(object):
     @property
     def frame_shape(self):
         return self.frame_width,self.frame_height
+
+    @property
+    def duration(self):
+        return self.fps * self.frame_count
 
     def seek_frame(self, n):
         raise NotImplementedError

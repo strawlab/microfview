@@ -35,6 +35,8 @@ class OpenCVCapture(CaptureBase):
         """
         self._log = logging.getLogger('microfview.capture.OpenCVCapture')
 
+        self._log.info('opening %s (file: %s)' % (identifier, is_file))
+
         self._identifier = identifier
         self._capture = cv2.VideoCapture(identifier)
         if not self._capture.isOpened():
@@ -54,6 +56,9 @@ class OpenCVCapture(CaptureBase):
         if is_file:
             self.frame_count = self._capture.get(getattr(cv2,"CAP_PROP_FRAME_COUNT",7))
         self.noncritical_errors = VideoDeviceReadError,
+
+        if np.isnan(self.fps):
+            self._log.warn("unknown FPS")
 
     def _grab_frame_blocking(self, n=None):
         """returns next frame."""
