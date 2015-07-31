@@ -12,6 +12,10 @@ def get_capture_object(desc, **options):
     except KeyError:
         use_opencv = True
 
+    if desc.startswith('synth:'):
+        from .synth import SynthCapture
+        return SynthCapture(desc)
+
     if os.path.isfile(desc):
         if desc.endswith('.fmf'):
             logging.info('Opening FMF file using motmot')
