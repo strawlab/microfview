@@ -23,7 +23,9 @@ def get_capture_object(desc, **options):
     if desc.startswith('/dev/video'):
         logging.info('Opening video device %s using OpenCV' % desc)
         from .opencv import OpenCVCapture
-        return OpenCVCapture(desc, **options)
+        # cv2.VideoCapture() does'nt accept /dev/videoX
+        device_num = int(desc[-1])
+        return OpenCVCapture(device_num, is_file=False, **options)
     elif use_opencv:
         try:
             device_num = int(options['device_num'])
