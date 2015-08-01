@@ -3,7 +3,6 @@ import random
 
 from microfview import *
 
-
 class MyPlugin(BlockingPlugin):
 
     def __init__(self, k, vfunc, n):
@@ -36,6 +35,7 @@ if __name__ == "__main__":
                          10))
     )
     fview.attach_plugin(chain)
+    fview.attach_plugin(DisplayPlugin('chain'))
 
     fview.start()
     while not fview.finished:
