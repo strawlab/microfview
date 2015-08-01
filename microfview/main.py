@@ -193,6 +193,9 @@ class Microfview(threading.Thread):
                             # anything useful
                             # if it is a dictionary then it is state associated with
                             # that frame
+                            if ret:
+                                #fixme: save to database or csv except 'KEY', "ORIGINAL_FRAME'
+                                pass
 
                             cn = self._callback_names[cb]
                             execution_times[cn] = t1 - t0

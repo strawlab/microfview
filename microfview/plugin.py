@@ -18,6 +18,8 @@ import threading
 import time
 import logging
 
+import numpy as np
+
 
 class PluginFinished(Exception):
     pass
@@ -71,6 +73,7 @@ class PluginChain(_Plugin):
         if not isinstance(plugins, tuple):
             raise ValueError('plugins must be a tuple')
         self._plugins = list(plugins)
+        self.shows_windows = any(p.shows_windows for p in self._plugins)
 
     def start(self, capture_object):
         map(lambda x: x.start(capture_object), self._plugins)
@@ -81,21 +84,24 @@ class PluginChain(_Plugin):
 
     def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         """override this function."""
-        finished = []
         ret = state or dict()
 
         if not self._plugins:
             raise PluginFinished
 
-        for p in self._plugins:
+        iquit = np.inf
+        for i,p in enumerate(self._plugins):
             try:
                 _ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, ret)
                 if _ret:
                     ret.update(_ret)
             except PluginFinished:
-                finished.append(p)
+                iquit = min(i, iquit)
 
-        map(lambda x: self._plugins.remove(x), finished)
+        # if any plugin quit, it and all plugins after must be removed
+        if not np.isinf(iquit):
+            to_rm = self._plugins[iquit:]
+            map(lambda x: self._plugins.remove(x), to_rm)
 
         return ret
 
