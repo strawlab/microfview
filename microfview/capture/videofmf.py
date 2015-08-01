@@ -23,6 +23,8 @@ class FMFCapture(CaptureBase):
             Defaults to 20.
 
         """
+        super(FMFCapture, self).__init__()
+
         self._mov = fmf.FlyMovie(filename, check_integrity)
 
         self._frame_timestamp = 0.0

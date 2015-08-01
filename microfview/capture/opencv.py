@@ -21,8 +21,10 @@ def decode_4cc(capture):
     else:
         return "????"
 
+
 class VideoDeviceReadError(Exception):
     pass
+
 
 class OpenCVCapture(CaptureBase):
 
@@ -33,6 +35,8 @@ class OpenCVCapture(CaptureBase):
           identifier (str): identifier as per cv2.VideoCapture
           is_file (bool): true if this device backs a video file (mp4, etc)
         """
+        super(OpenCVCapture, self).__init__()
+
         self._log = logging.getLogger('microfview.capture.OpenCVCapture')
 
         self._log.info('opening %s (file: %s)' % (identifier, is_file))

@@ -83,8 +83,11 @@ class _MovingDot(_SynthBase):
 
         self._pos = x,y
 
+
 class SynthCapture(CaptureBase):
     def __init__(self, desc):
+        super(SynthCapture, self).__init__()
+
         chunks = desc.split(':')
         if (len(chunks) > 1) and chunks[1]:
             params = dict(s.split('=') for s in chunks[1:])
