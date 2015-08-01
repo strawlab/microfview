@@ -34,7 +34,7 @@ Example:
 __version__ = "0.1.0"
 
 from .main import Microfview
-from .plugin import BlockingPlugin, NonBlockingPlugin, PluginFinished
+from .plugin import BlockingPlugin, NonBlockingPlugin, PluginFinished, PluginChain
 from .capture import SeekError, get_capture_object
 from .util import get_logger, parse_config_file
 

@@ -22,6 +22,7 @@ import logging
 class PluginFinished(Exception):
     pass
 
+
 class _Plugin(object):
 
     def __init__(self, every=1, logger=None):
@@ -49,11 +50,52 @@ class _Plugin(object):
         """override this function."""
         pass
 
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
+        raise NotImplementedError
+
+
+class PluginChain(_Plugin):
+
+    def __init__(self, plugins, every=1, logger=None):
+        super(PluginChain, self).__init__(every, logger)
+        if not isinstance(plugins, tuple):
+            raise ValueError('plugins must be a tuple')
+        self._plugins = list(plugins)
+
+    def start(self, capture_object):
+        map(lambda x: x.start(capture_object), self._plugins)
+
+    def stop(self):
+        """compatibility function."""
+        map(lambda x: x.stop(), self._plugins)
+
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
+        """override this function."""
+        finished = []
+        ret = state or dict()
+
+        if not self._plugins:
+            raise PluginFinished
+
+        for p in self._plugins:
+            try:
+                _ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, ret)
+                if _ret:
+                    ret.update(_ret)
+            except PluginFinished:
+                finished.append(p)
+
+        map(lambda x: self._plugins.remove(x), finished)
+
+        return ret
+
+
 class BlockingPlugin(_Plugin):
 
     def push_frame(self, *callargs):
         """compatibility function."""
         return self.process_frame(*callargs)
+
 
 class NonBlockingPlugin(_Plugin, threading.Thread):
 
