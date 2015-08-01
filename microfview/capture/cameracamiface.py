@@ -7,8 +7,9 @@ import motmot.cam_iface.cam_iface_ctypes as cam_iface
 import logging
 logger = logging.getLogger('microfview')
 
+from . import CaptureBase
 
-class CamifaceCapture(cam_iface.Camera):
+class CamifaceCapture(CaptureBase):
 
     def __init__(self, device_num=0, mode_num=None,
                  num_buffers=30, trigger_mode=None, roi=None, max_framerate=None,
@@ -25,8 +26,9 @@ class CamifaceCapture(cam_iface.Camera):
             image.
 
         """
-        logger.info('initializing camera %d', device_num)
+        super(CamifaceCapture, self).__init__()
 
+        logger.info('initializing camera %d', device_num)
         # print all available camera modes on init.
         num_modes = cam_iface.get_num_modes(device_num)
         for this_mode_num in range(num_modes):
@@ -38,32 +40,32 @@ class CamifaceCapture(cam_iface.Camera):
         logger.info('using video mode %d', mode_num if mode_num is not None else 0)
 
         # initialize cam_iface.Camera instance.
-        cam_iface.Camera.__init__(self, device_num, num_buffers, mode_num)
+        self._cam = cam_iface.Camera(device_num, num_buffers, mode_num)
 
         # print all available trigger modes.
-        n_trigger_modes = self.get_num_trigger_modes()
+        n_trigger_modes = self._cam.get_num_trigger_modes()
         for i in range(n_trigger_modes):
-            logger.info('trigger mode %d: %s', i, self.get_trigger_mode_string(i))
+            logger.info('trigger mode %d: %s', i, self._cam.get_trigger_mode_string(i))
         if trigger_mode is not None:
-            self.set_trigger_mode_number(trigger_mode)
-        logger.info('using trigger mode %d', self.get_trigger_mode_number())
+            self._cam.set_trigger_mode_number(trigger_mode)
+        logger.info('using trigger mode %d', self._cam.get_trigger_mode_number())
 
         # start the camera and set roi if requested.
-        self.start_camera()
+        self._cam.start_camera()
         if roi is not None:
-            self.set_frame_roi(*roi)
-            actual_roi = self.get_frame_roi()
+            self._cam.set_frame_roi(*roi)
+            actual_roi = self._cam.get_frame_roi()
             if roi == actual_roi:
                 self.frame_width, self.frame_height = roi
             else:
                 raise ValueError("could not set ROI. Actual ROI is %s." % (actual_roi,))
         else:
-            self.frame_width = self.get_max_width()
-            self.frame_height = self.get_max_height()
+            self.frame_width = self._cam.get_max_width()
+            self.frame_height = self._cam.get_max_height()
 
         # set the properties
-        for prop_num in range(self.get_num_camera_properties()):
-            prop_info = self.get_camera_property_info(prop_num)
+        for prop_num in range(self._cam.get_num_camera_properties()):
+            prop_info = self._cam.get_camera_property_info(prop_num)
             _name = prop_info['name']
             if _name in prop_config:
                 _val = prop_config[_name]
@@ -71,20 +73,20 @@ class CamifaceCapture(cam_iface.Camera):
                     _auto = True
                 else:
                     _auto = False
-                self.set_camera_property(prop_num, _val, _auto)
+                self._cam.set_camera_property(prop_num, _val, _auto)
                 _auto = 'AUTO' if _auto else 'MANUAL'
                 logger.info("setting %s to: %f, %s", _name, _val, _auto)
             else:
-                _val, _auto = self.get_camera_property(prop_num)
+                _val, _auto = self._cam.get_camera_property(prop_num)
                 _auto = 'AUTO' if _auto else 'MANUAL'
                 logger.info("leaving %s at: %f, %s", _name, _val, _auto)
 
         # set the max framerate
         if max_framerate is not None:
-            self.set_framerate(max_framerate)
+            self._cam.set_framerate(max_framerate)
             logger.info("setting max framerate to: %f", max_framerate)
         else:
-            fr = self.get_framerate()
+            fr = self._cam.get_framerate()
             logger.info("leaving max framerate at: %f", fr)
 
 
@@ -94,9 +96,17 @@ class CamifaceCapture(cam_iface.Camera):
 
 
         #properties expected by the CaptureBase class
-        self.fps = self.get_framerate()
-        self.frame_shape = (self.frame_width,self.frame_height)
+        self.fps = self._cam.get_framerate()
         self.is_video_file = False
+
+    def grab_next_frame_blocking(self):
+        return self._cam.grab_next_frame_blocking()
+
+    def get_last_timestamp(self):
+        return self._cam.get_last_timestamp()
+
+    def get_last_framenumber(self):
+        return self._cam.get_last_framenumber()
 
     def grab_frame_n(self, n):
         raise ValueError("Seeking not available on video devices")
