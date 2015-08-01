@@ -24,6 +24,14 @@ class PluginFinished(Exception):
 
 
 class _Plugin(object):
+    """Base class for
+
+    Attributes:
+        every (int): Call this plugin every this many frames
+        logger : logging object
+        finished (bool) : true if this plugin should quit
+        shows_windows (bool) : true if this plugin shows an cv2 window
+    """
 
     def __init__(self, every=1, logger=None):
         """BlockingPlugin.
@@ -36,7 +44,9 @@ class _Plugin(object):
             logger = logging.getLogger('microfview')
         self.logger = logger
         self.every = int(every)
+
         self.finished = False
+        self.shows_windows = False
 
     def start(self, capture_object):
         """compatibility function."""

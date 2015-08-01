@@ -9,6 +9,8 @@ import threading
 import time
 import collections
 
+import cv2
+
 import logging
 logger = logging.getLogger('microfview')
 
@@ -131,12 +133,15 @@ class Microfview(threading.Thread):
         for plugin in self._plugins:
             plugin.start(self.frame_capture)
 
+        call_cvwaitkey = any(plugin.shows_windows for p in self._plugins)
+
         self._run = True
         try:
 
             execution_times = collections.OrderedDict({n:time.time() for n in self._callback_names.values()})
             execution_times['TOTAL'] = time.time()
 
+            state = {'KEY':None, 'ORIGINAL_FRAME':None}
             while self._run:
                 now0 = time.time()
 
@@ -154,6 +159,8 @@ class Microfview(threading.Thread):
                 if buf is None:
                     logger.exception("error when retrieving frame")
                     continue
+
+                state['ORIGINAL_FRAME'] = buf
 
                 frame_timestamp = self.frame_capture.get_last_timestamp()
                 frame_number = self.frame_capture.get_last_framenumber()
@@ -177,7 +184,7 @@ class Microfview(threading.Thread):
                     if self.frame_number_current % n == 0:
                         try:
                             t0 = time.time()
-                            ret = cb(buf, frame_number, self.frame_count, frame_timestamp, now, None)
+                            ret = cb(buf, frame_number, self.frame_count, frame_timestamp, now, state)
                             t1 = time.time()
 
                             # if ret is False, the non-blocking plugin was
@@ -212,6 +219,10 @@ class Microfview(threading.Thread):
                 if self._profile is not None:
                     #pass on the callback args
                     self._profile[0](execution_times, *self._profile[1])
+
+                if call_cvwaitkey:
+                    state['KEY'] = 0xFF & cv2.waitKey(1)
+
 
         finally:
             # stop the plugins

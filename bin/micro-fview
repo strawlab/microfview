@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     cam = get_capture_object(args.capture, **conf['capture'])
     fview = Microfview(cam)
-    fview.attach_plugin(DisplayPlugin('micro-fview', True))
+    fview.attach_plugin(DisplayPlugin('micro-fview'))
 
     try:
         fview.start()
