@@ -23,7 +23,7 @@ def _has_method(obj, method):
 
 class Microfview(threading.Thread):
 
-    def __init__(self, frame_capture, flipRL=False, flipUD=False):
+    def __init__(self, frame_capture, visible=True, debug=True, flipRL=False, flipUD=False):
         """Microfview main class.
 
         Args:
@@ -40,6 +40,9 @@ class Microfview(threading.Thread):
                 _has_method(frame_capture, 'get_last_timestamp') and
                 _has_method(frame_capture, 'get_last_framenumber')):
             raise TypeError("frame_capture_device does not provide required methods.")
+
+        self._visible = visible
+        self._debug = debug
 
         self.frame_capture = frame_capture
         self.frame_capture_noncritical_errors = frame_capture.noncritical_errors
@@ -131,6 +134,8 @@ class Microfview(threading.Thread):
         """main loop. do not call directly."""
         # start all plugins
         for plugin in self._plugins:
+            plugin.set_debug(self._debug)
+            plugin.set_visible(self._visible)
             plugin.start(self.frame_capture)
 
         call_cvwaitkey = any(plugin.shows_windows for p in self._plugins)

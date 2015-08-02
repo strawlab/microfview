@@ -18,6 +18,7 @@ import threading
 import time
 import logging
 
+import cv2
 import numpy as np
 
 
@@ -49,6 +50,32 @@ class _Plugin(object):
 
         self.finished = False
         self.shows_windows = False
+        self.debug = False
+        self.visible = True
+
+    def set_debug(self, d):
+        self.debug = d
+
+    def set_visible(self, v):
+        self.visible = v
+
+    def window_create(self, name, size, resizable=True):
+        if self.visible:
+            if resizable:
+                cv2.namedWindow(name, getattr(cv2,'WINDOW_NORMAL',0))
+                if (size[0] > 0) and (not np.isnan(size[0])):
+                    # some videos don't know their size...
+                    cv2.resizeWindow(name, *map(int, size))
+            else:
+                cv2.namedWindow(name, getattr(cv2, 'WINDOW_AUTOSIZE', 1))
+
+    def window_show(self, name, img):
+        if self.visible:
+            cv2.imshow(name, img)
+
+    def window_destroy(self, name):
+        if self.visible:
+            cv2.destroyWindow(name)
 
     def start(self, capture_object):
         """compatibility function."""
@@ -74,6 +101,12 @@ class PluginChain(_Plugin):
             raise ValueError('plugins must be a tuple')
         self._plugins = list(plugins)
         self.shows_windows = any(p.shows_windows for p in self._plugins)
+
+    def set_debug(self, d):
+        map(lambda x: x.set_debug(d), self._plugins)
+
+    def set_visible(self, v):
+        map(lambda x: x.set_visible(v), self._plugins)
 
     def start(self, capture_object):
         map(lambda x: x.start(capture_object), self._plugins)
