@@ -86,22 +86,10 @@ class PluginChain(_Plugin):
         """override this function."""
         ret = state or dict()
 
-        if not self._plugins:
-            raise PluginFinished
-
-        iquit = np.inf
         for i,p in enumerate(self._plugins):
-            try:
-                _ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, ret)
-                if _ret:
-                    ret.update(_ret)
-            except PluginFinished:
-                iquit = min(i, iquit)
-
-        # if any plugin quit, it and all plugins after must be removed
-        if not np.isinf(iquit):
-            to_rm = self._plugins[iquit:]
-            map(lambda x: self._plugins.remove(x), to_rm)
+            _ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, ret)
+            if _ret:
+                ret.update(_ret)
 
         return ret
 
