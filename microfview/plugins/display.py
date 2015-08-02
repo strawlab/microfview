@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 from ..plugin import BlockingPlugin, PluginFinished
 
@@ -12,6 +13,14 @@ class DisplayPlugin(BlockingPlugin):
         self._window_name = window_name
 
     def start(self, capture_object):
+        # create a resizable window but limit its size to less than the screen size
+        cv2.namedWindow(self._window_name, getattr(cv2,'WINDOW_NORMAL',0))
+        w, h = capture_object.frame_shape
+        if (w > 0) and (not np.isnan(w)):
+                sf = (1024. / w) if w > 1024 else 1.0
+                h *= sf
+                w *= sf
+                cv2.resizeWindow(self._window_name, (int(w), int(h)))
         cv2.namedWindow(self._window_name)
 
     def stop(self):
