@@ -20,8 +20,7 @@ class DisplayPlugin(BlockingPlugin):
                 sf = (1024. / w) if w > 1024 else 1.0
                 h *= sf
                 w *= sf
-                cv2.resizeWindow(self._window_name, (int(w), int(h)))
-        cv2.namedWindow(self._window_name)
+                cv2.resizeWindow(self._window_name, int(w), int(h))
 
     def stop(self):
         cv2.destroyWindow(self._window_name)
