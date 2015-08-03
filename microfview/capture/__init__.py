@@ -52,7 +52,7 @@ class CaptureBase(object):
 
     fps = np.nan
 
-    frame_count = np.nan
+    frame_count = np.inf
     frame_width = np.nan
     frame_height = np.nan
 
