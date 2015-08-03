@@ -53,6 +53,10 @@ class _Plugin(object):
         self.debug = False
         self.visible = True
 
+    @property
+    def identifier(self):
+        return self.__class__.__name__
+
     def set_debug(self, d):
         self.debug = d
 
@@ -101,6 +105,10 @@ class PluginChain(_Plugin):
             raise ValueError('plugins must be a tuple')
         self._plugins = list(plugins)
         self.shows_windows = any(p.shows_windows for p in self._plugins)
+
+    @property
+    def identifier(self):
+        return '->'.join(p.identifier for p in self._plugins)
 
     def set_debug(self, d):
         map(lambda x: x.set_debug(d), self._plugins)

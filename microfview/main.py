@@ -98,6 +98,8 @@ class Microfview(threading.Thread):
             try:
                 #classes can provide identifiers
                 cb_name = callback_func.im_self.identifier
+                if cb_name is None:
+                    raise AttributeError
             except AttributeError:
                 #otherwise the class name will do
                 cb_name = callback_func.im_class.__name__

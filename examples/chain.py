@@ -12,6 +12,10 @@ class MyPlugin(BlockingPlugin):
         self._n = n
         self._i = 0
 
+    @property
+    def identifier(self):
+        return self.__class__.__name__ + ':' + self._k
+
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         if self._i > self._n:
             raise PluginFinished
