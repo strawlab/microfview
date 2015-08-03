@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     conf = parse_config_file(args.config)
 
-    cam = get_capture_object(args.capture, **conf['capture'])
+    cam = get_capture_object(args.capture, conf)
     fview = Microfview(cam)
     fview.attach_plugin(DisplayPlugin('micro-fview'))
 

@@ -40,9 +40,6 @@ class FMFCapture(CaptureBase):
     def seek_frame(self, n):
         self._mov.seek(n)
 
-    def grab_frame_n(self, n):
-        return self._mov.get_frame(n, allow_partial_frames=False)
-
     def grab_next_frame_blocking(self):
         """returns next frame."""
         try:

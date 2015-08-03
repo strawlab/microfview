@@ -108,9 +108,6 @@ class CamifaceCapture(CaptureBase):
     def get_last_framenumber(self):
         return self._cam.get_last_framenumber()
 
-    def grab_frame_n(self, n):
-        raise ValueError("Seeking not available on video devices")
-
     def seek_frame(self, n):
         raise ValueError("Seeking not available on video devices")
 

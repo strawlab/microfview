@@ -33,9 +33,12 @@ Example:
 
 __version__ = "0.1.0"
 
+import cv2
+
 from .main import Microfview
 from .plugin import BlockingPlugin, NonBlockingPlugin, PluginFinished, PluginChain
 from .capture import SeekError, get_capture_object
+from .capture.transform import ImageTransform
 from .util import get_logger, parse_config_file
 from .plugins.display import DisplayPlugin
 

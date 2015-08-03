@@ -124,7 +124,7 @@ class Microfview(threading.Thread):
             raise TypeError("plugin does not have the required methods/attributes.")
         self._plugins.append(plugin)
         handle = self.attach_callback(plugin.push_frame, every=plugin.every)
-        return (plugin, handle)
+        return plugin, handle
 
     def detach_plugin(self, handle):
         """Detaches a plugin."""
@@ -154,7 +154,7 @@ class Microfview(threading.Thread):
 
                 # grab frame
                 try:
-                    buf = self.frame_capture.grab_next_frame_blocking()
+                    buf = self.frame_capture.grab_next_frame()
                 except EOFError as e:
                     logger.info(e.message)
                     self.stop()

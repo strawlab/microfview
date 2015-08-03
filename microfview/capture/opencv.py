@@ -64,14 +64,8 @@ class OpenCVCapture(CaptureBase):
         if np.isnan(self.fps):
             self._log.warn("unknown FPS")
 
-    def _grab_frame_blocking(self, n=None):
+    def grab_next_frame_blocking(self):
         """returns next frame."""
-        if n is not None:
-            seeking = True
-            self.seek_frame(n)
-        else:
-            seeking = False
-
         #opencv post increments, so get these first
         ms = self._capture.get(getattr(cv2,"CAP_PROP_POS_MSEC",0))
         fn = self._capture.get(getattr(cv2,"CAP_PROP_POS_FRAMES",1))
@@ -83,28 +77,15 @@ class OpenCVCapture(CaptureBase):
 
         if not flag:
             if self.is_video_file:
-                if seeking:
-                    #seeking is generally shit. Sometimes we seek to positions
-                    #that are past the number of frames in the file, and yet
-                    #we get data.
-                    raise SeekError('no data for frame %s' % n)
-                else:
-                    #there is not true way for opencv to tell us we are at
-                    #the end of file - so add many scary heuristics
-                    if frame_number >= self.frame_count:
-                        raise EOFError("File ended at frame: %d" % frame_number)
-                    #the frame didn't advance - truncated file
-                    fn2 = self._capture.get(getattr(cv2,"CAP_PROP_POS_FRAMES",1))
-                    if (fn > 0) and (fn == fn2):
-                        raise EOFError("Truncated file at at frame: %d" % frame_number)
+                #there is not true way for opencv to tell us we are at
+                #the end of file - so add many scary heuristics
+                if frame_number >= self.frame_count:
+                    raise EOFError("File ended at frame: %d" % frame_number)
+                #the frame didn't advance - truncated file
+                fn2 = self._capture.get(getattr(cv2,"CAP_PROP_POS_FRAMES",1))
+                if (fn > 0) and (fn == fn2):
+                    raise EOFError("Truncated file at at frame: %d" % frame_number)
             raise VideoDeviceReadError
-
-        if seeking:
-            if n != frame_number:
-                raise SeekError("seek failure requested %s got %s" % (n, frame_number))
-
-            # check we seeked to within one frame (0.5 frame really)
-            # print "SEEK TO fn %s t %s ok %s" % (n, frame_timestamp, (frame_timestamp - (n / self.fps)) < (2. / self.fps))
 
         self._frame_timestamp = frame_timestamp
         self._frame_number = frame_number
@@ -126,15 +107,6 @@ class OpenCVCapture(CaptureBase):
                 self._capture = cv2.VideoCapture(self._identifier)
             else:
                 self._capture.set(getattr(cv2,"CAP_PROP_POS_FRAMES",1), n)
-        else:
-            raise ValueError("Seeking not available on video devices")
-
-    def grab_next_frame_blocking(self):
-        return self._grab_frame_blocking()
-
-    def grab_frame_n(self, n):
-        if self.is_video_file:
-            return self._grab_frame_blocking(n)
         else:
             raise ValueError("Seeking not available on video devices")
 
