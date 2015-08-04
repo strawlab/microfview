@@ -6,7 +6,7 @@ from microfview import *
 class MyPlugin(BlockingPlugin):
 
     def __init__(self, k, vfunc, n):
-        super(MyPlugin, self).__init__()
+        super(MyPlugin, self).__init__(logger=logging.getLogger('example.%s' % k))
         self._k = k
         self._vfunc = vfunc
         self._n = n
@@ -20,8 +20,11 @@ class MyPlugin(BlockingPlugin):
         if self._i > self._n:
             raise PluginFinished
         self._i += 1
-        self.logger.debug("%s got %r as state" % (self._k, state))
+        self.logger.debug("%s got %r as state" % (self._k, state.keys()))
         return {self._k: self._vfunc()}
+
+    def stop(self):
+        self.logger.debug("finished")
 
 if __name__ == "__main__":
     import logging
