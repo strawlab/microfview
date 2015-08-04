@@ -245,3 +245,13 @@ class Microfview(threading.Thread):
         """stop the mainloop."""
         with self._lock:
             self._run = False
+
+    def main(self):
+        try:
+            self.start()
+            while not self.finished:
+               time.sleep(0.1)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.stop()

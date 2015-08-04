@@ -40,10 +40,6 @@ if __name__ == "__main__":
     )
     fview.attach_plugin(chain)
     fview.attach_plugin(DisplayPlugin('chain'))
-
-    fview.start()
-    while not fview.finished:
-       time.sleep(0.1)
-    fview.stop()
+    fview.main()
 
 
