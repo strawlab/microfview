@@ -124,10 +124,9 @@ class PluginChain(_Plugin):
         map(lambda x: x.stop(), self._plugins)
 
     def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
-        """override this function."""
         ret = state or dict()
 
-        for i,p in enumerate(self._plugins):
+        for p in self._plugins:
             _ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, ret)
             if _ret:
                 ret.update(_ret)

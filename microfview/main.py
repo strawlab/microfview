@@ -103,6 +103,7 @@ class Microfview(threading.Thread):
             except AttributeError:
                 #otherwise the class name will do
                 cb_name = callback_func.im_class.__name__
+        logging.debug("attached callback %s %r" % (cb_name, callback_func))
         self._callback_names[callback_func] = cb_name
 
         return handle
@@ -124,6 +125,7 @@ class Microfview(threading.Thread):
             raise TypeError("plugin does not have the required methods/attributes.")
         self._plugins.append(plugin)
         handle = self.attach_callback(plugin.push_frame, every=plugin.every)
+        logger.info('attaching plugin %s (shows_windows: %s)' % (plugin.identifier, plugin.shows_windows))
         return plugin, handle
 
     def detach_plugin(self, handle):
@@ -140,7 +142,8 @@ class Microfview(threading.Thread):
             plugin.set_visible(self._visible)
             plugin.start(self.frame_capture)
 
-        call_cvwaitkey = any(plugin.shows_windows for p in self._plugins)
+        call_cvwaitkey = any(p.shows_windows for p in self._plugins)
+        logger.info('will call waitkey: %s' % call_cvwaitkey)
 
         self._run = True
         try:
@@ -189,6 +192,7 @@ class Microfview(threading.Thread):
                 # call all attached callbacks.
                 for n, cb in self._callbacks:
                     if self.frame_number_current % n == 0:
+                        cn = self._callback_names[cb]
                         try:
                             t0 = time.time()
                             ret = cb(buf, frame_number, self.frame_count, frame_timestamp, now, state)
@@ -204,10 +208,10 @@ class Microfview(threading.Thread):
                                 #fixme: save to database or csv except 'KEY', "ORIGINAL_FRAME'
                                 pass
 
-                            cn = self._callback_names[cb]
                             execution_times[cn] = t1 - t0
 
                         except PluginFinished:
+                            logger.info("%s finished" % cn)
                             finished_callback_handles.append((n, cb))
 
                 if self._profile is not None:

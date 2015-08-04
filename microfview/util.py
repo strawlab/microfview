@@ -5,6 +5,7 @@ import collections
 import json
 import yaml
 
+
 def get_logger():
     """returns the global microfview logging.Logger instance"""
     # setup logging
@@ -15,6 +16,7 @@ def get_logger():
     h.setFormatter(f)
     logger.addHandler(h)
     return logger
+
 
 def parse_config_file(filename):
     config = collections.defaultdict(dict)
