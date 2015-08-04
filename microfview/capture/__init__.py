@@ -81,6 +81,8 @@ class CaptureBase(object):
 
     transform = None
 
+    supports_seeking = False
+
     @property
     def frame_shape(self):
         return self.frame_width,self.frame_height

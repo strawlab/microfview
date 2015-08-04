@@ -12,6 +12,8 @@ from . import CaptureBase
 
 class FMFCapture(CaptureBase):
 
+    supports_seeking = True
+
     def __init__(self, filename, check_integrity=False, force_framerate=20):
         """class for interfacing fmf videos.
 
