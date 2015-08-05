@@ -128,8 +128,19 @@ class PluginChain(_Plugin):
 
         for p in self._plugins:
             _ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, ret)
-            if _ret:
-                ret.update(_ret)
+            # see main.py for the logic here
+            if _ret is not None:
+                ret_state = None
+                if _ret is False:
+                    pass
+                elif isinstance(_ret, tuple):
+                    frame, ret_state = _ret
+                elif isinstance(_ret, dict):
+                    ret_state = _ret
+                elif isinstance(_ret, np.ndarray):
+                    frame = _ret
+                if ret_state is not None:
+                    ret.update(ret_state)
 
         return ret
 

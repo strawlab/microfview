@@ -10,6 +10,7 @@ import time
 import collections
 
 import cv2
+import numpy as np
 
 import logging
 logger = logging.getLogger('microfview')
@@ -89,7 +90,7 @@ class Microfview(threading.Thread):
         handle = (every, callback_func)
         if handle in self._callbacks:
             raise ValueError("callback_func, every combination exist.")
-        bisect.insort(self._callbacks, handle)
+        self._callbacks.append(handle)
 
         #get a readable name for the plugin
         cb_name = callback_func.func_name
@@ -202,11 +203,21 @@ class Microfview(threading.Thread):
                             # still processing the old frame.
                             # if it is None then the plugin didn't return
                             # anything useful
-                            # if it is a dictionary then it is state associated with
-                            # that frame
-                            if ret:
-                                #fixme: save to database or csv except 'KEY', "ORIGINAL_FRAME'
-                                pass
+                            # if is a 2-tuple then it is a frame and a dict
+                            if ret is not None:
+                                ret_state = None
+                                if ret is False:
+                                    pass
+                                elif isinstance(ret, tuple):
+                                    buf, ret_state = ret
+                                elif isinstance(ret, dict):
+                                    ret_state = ret
+                                elif isinstance(ret, np.ndarray):
+                                    buf = ret
+
+                                if ret_state is not None:
+                                    #fixme: save to database or csv except 'KEY', "ORIGINAL_FRAME'
+                                    pass
 
                             execution_times[cn] = t1 - t0
 
