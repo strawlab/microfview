@@ -75,7 +75,10 @@ class _Plugin(object):
 
     def window_show(self, name, img):
         if self.visible:
-            cv2.imshow(name, img)
+            if img is None:
+                self.logger.warn('image frame was None')
+            else:
+                cv2.imshow(name, img)
 
     def window_destroy(self, name):
         if self.visible:
