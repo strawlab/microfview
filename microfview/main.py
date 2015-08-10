@@ -24,7 +24,7 @@ def _has_method(obj, method):
 
 class Microfview(threading.Thread):
 
-    def __init__(self, frame_capture, visible=True, debug=True, flipRL=False, flipUD=False):
+    def __init__(self, frame_capture, visible=True, debug=True):
         """Microfview main class.
 
         Args:
@@ -57,10 +57,6 @@ class Microfview(threading.Thread):
 
         self._callback_names = {}
         self._profile = None
-
-        self._flip = flipRL or flipUD
-        self._slice = (slice(None, None, -1 if flipUD else None),
-                       slice(None, None, -1 if flipRL else None))
 
         self.finished = False
 
@@ -203,10 +199,6 @@ class Microfview(threading.Thread):
                 self.frame_number_current = frame_number
 
                 self.frame_count += 1
-
-                # flip
-                if self._flip:
-                    buf = buf[self._slice]
 
                 finished_callback_handles = []
                 now = time.time()
