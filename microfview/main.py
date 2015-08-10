@@ -53,7 +53,7 @@ class Microfview(threading.Thread):
 
         self._run = False
         self._callbacks = []
-        self._plugins = []
+        self._plugins = collections.OrderedDict()
 
         self._callback_names = {}
         self._profile = None
@@ -124,26 +124,31 @@ class Microfview(threading.Thread):
                 _has_method(plugin, 'push_frame') and
                 hasattr(plugin, 'every')):
             raise TypeError("plugin does not have the required methods/attributes.")
-        self._plugins.append(plugin)
         handle = self.attach_callback(plugin.push_frame, every=plugin.every)
+        self._plugins[handle] = plugin
         logger.info('attaching plugin %s (shows_windows: %s)' % (plugin.identifier, plugin.shows_windows))
         return plugin, handle
 
-    def detach_plugin(self, handle):
+    def detach_plugin(self, plugin):
         """Detaches a plugin."""
-        plugin, cb_handle = handle
-        self._plugins.remove(plugin)
-        self.detach_callback(cb_handle)
+        found = False
+        for handle,_plugin in self._plugins.iteritems():
+            if _plugin == plugin:
+                found = True
+                break
+        if found:
+            self.detach_callback(handle)
+            self._plugins.pop(_plugin)
 
     def run(self):
         """main loop. do not call directly."""
         # start all plugins
-        for plugin in self._plugins:
+        for plugin in self._plugins.itervalues():
             plugin.set_debug(self._debug)
             plugin.set_visible(self._visible)
             plugin.start(self.frame_capture)
 
-        call_cvwaitkey = any(p.shows_windows for p in self._plugins)
+        call_cvwaitkey = any(p.shows_windows for p in self._plugins.itervalues())
         logger.info('will call waitkey: %s' % call_cvwaitkey)
 
         self._run = True
@@ -251,7 +256,7 @@ class Microfview(threading.Thread):
 
         finally:
             # stop the plugins
-            for plugin in self._plugins:
+            for plugin in self._plugins.itervalues():
                 plugin.stop()
 
         self.finished = True
