@@ -7,8 +7,9 @@ import numpy as np
 from . import CaptureBase
 
 class _SynthBase(object):
-    def __init__(self, size=None, noise=0.0, bg=None, fps=25, **params):
+    def __init__(self, size=None, noise=0.0, bg=None, fps=25, nframes=np.inf, **kwargs):
         self.fps = float(fps)
+        self.nframes = float(nframes)
 
         self._bg = None
         self.frame_size = (640, 480)
@@ -108,8 +109,11 @@ class SynthCapture(CaptureBase):
         self.frame_width = self._capture.frame_size[0]
         self.frame_height = self._capture.frame_size[0]
         self.is_video_file = False
+        self.frame_count = self._capture.nframes
 
     def grab_next_frame_blocking(self):
+        if self._i >= self.frame_count:
+            raise EOFError
         _, buf = self._capture.read()
         self._i += 1
         self._ts = time.time()
