@@ -15,6 +15,8 @@ class _SynthBase(object):
         self.frame_size = (640, 480)
         if bg is not None:
             self._bg = cv2.imread(bg, 1)
+            if self._bg is None:
+                raise ValueError('%s not found' % bg)
             h, w = self._bg.shape[:2]
             self.frame_size = (w, h)
 
