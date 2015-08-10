@@ -62,7 +62,8 @@ class _MovingDot(_SynthBase):
 
         self._vx = self._vy = kwargs.get('speed', 5)
         self._pos = int(random.random()*self.frame_size[0]), int(random.random()*self.frame_size[1])
-        self._size = kwargs.get('size', 10)
+        self._size = int(kwargs.get('size', 10))
+        self._dotnoise = float(kwargs.get('dotnoise',0))
 
     def render(self, buf):
         x,y = self._pos
@@ -79,6 +80,10 @@ class _MovingDot(_SynthBase):
 
         x += self._vx
         y += self._vy
+
+        if self._dotnoise:
+            x += ((random.random() - 0.5) * self._dotnoise)
+            y += ((random.random() - 0.5) * self._dotnoise)
 
         cv2.circle(buf, (int(x),int(y)), self._size, (0, 0, 255), -1)
 
