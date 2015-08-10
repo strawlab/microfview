@@ -151,6 +151,9 @@ class Microfview(threading.Thread):
         call_cvwaitkey = any(p.shows_windows for p in self._plugins.itervalues())
         logger.info('will call waitkey: %s' % call_cvwaitkey)
 
+        all_grey_plugins = not any(p.uses_color for p in self._plugins.itervalues())
+        logger.info('plugins all use grey images: %s' % all_grey_plugins)
+
         self._run = True
         try:
 
@@ -158,12 +161,15 @@ class Microfview(threading.Thread):
             execution_times['TOTAL'] = time.time()
 
             state = {'KEY':None, 'ORIGINAL_FRAME':None}
+
+            capture_is_color = None
+
             while self._run:
                 now0 = time.time()
 
                 # grab frame
                 try:
-                    buf = self.frame_capture.grab_next_frame()
+                    frame = self.frame_capture.grab_next_frame()
                 except EOFError as e:
                     logger.info(e.message)
                     self.stop()
@@ -172,11 +178,20 @@ class Microfview(threading.Thread):
                     logger.exception("error when retrieving frame")
                     continue
 
-                if buf is None:
+                if frame is None:
                     logger.exception("error when retrieving frame")
                     continue
 
-                state['ORIGINAL_FRAME'] = buf
+                if capture_is_color is None:
+                    #protect against empty last dimensions
+                    capture_is_color = (frame.shape[-1] == 3) & (frame.ndim == 3)
+
+                if capture_is_color and all_grey_plugins:
+                    buf = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                else:
+                    buf = frame
+
+                state['ORIGINAL_FRAME'] = frame
 
                 frame_timestamp = self.frame_capture.get_last_timestamp()
                 frame_number = self.frame_capture.get_last_framenumber()

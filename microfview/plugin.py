@@ -34,6 +34,7 @@ class _Plugin(object):
         logger : logging object
         finished (bool) : true if this plugin should quit
         shows_windows (bool) : true if this plugin shows an cv2 window
+        uses_color (bool) : true if this plugin uses color information
     """
 
     def __init__(self, every=1, logger=None):
@@ -52,6 +53,7 @@ class _Plugin(object):
         self.shows_windows = False
         self.debug = False
         self.visible = True
+        self.uses_color = False
 
     @property
     def identifier(self):
@@ -108,6 +110,7 @@ class PluginChain(_Plugin):
             raise ValueError('plugins must be a tuple')
         self._plugins = list(plugins)
         self.shows_windows = any(p.shows_windows for p in self._plugins)
+        self.uses_color = any(p.uses_color for p in self._plugins)
 
     @property
     def identifier(self):
