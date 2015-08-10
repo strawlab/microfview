@@ -49,7 +49,7 @@ class Microfview(threading.Thread):
         self.frame_capture_noncritical_errors = frame_capture.noncritical_errors
 
         self.frame_count = 0
-        self.frame_number_current = -1
+        self.frame_number_current = 0
 
         self._run = False
         self._callbacks = []
