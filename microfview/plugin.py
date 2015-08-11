@@ -104,11 +104,12 @@ class _Plugin(object):
 
 class PluginChain(_Plugin):
 
-    def __init__(self, plugins, every=1, logger=None):
+    def __init__(self, plugins, return_last_frame=True, every=1, logger=None):
         super(PluginChain, self).__init__(every, logger)
         if not isinstance(plugins, tuple):
             raise ValueError('plugins must be a tuple')
         self._plugins = list(plugins)
+        self._return_last_frame = return_last_frame
         self.shows_windows = any(p.shows_windows for p in self._plugins)
         self.uses_color = any(p.uses_color for p in self._plugins)
 
@@ -148,8 +149,15 @@ class PluginChain(_Plugin):
                 if ret_state is not None:
                     ret.update(ret_state)
 
-        return ret
-
+        if self._return_last_frame:
+            return ret
+        else:
+            if isinstance(_ret, tuple):
+                return _ret[1]
+            elif isinstance(_ret, dict):
+                return _ret
+            else:
+                return None
 
 class BlockingPlugin(_Plugin):
 
