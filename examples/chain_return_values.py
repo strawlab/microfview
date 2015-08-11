@@ -30,7 +30,7 @@ if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.DEBUG)
 
-    cam = get_capture_object("synth:class=dot:fps=2")
+    cam = get_capture_object("synth:class=dot:fps=2:nframes=10")
     fview = Microfview(cam)
 
     chain = PluginChain((
