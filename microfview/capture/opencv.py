@@ -3,10 +3,11 @@
 Provides FMFCapture class for FlyMovieFormat videos.
 """
 
+import logging
+import os.path
+
 import cv2
 import numpy as np
-
-import logging
 
 from . import CaptureBase, SeekError
 
@@ -59,6 +60,7 @@ class OpenCVCapture(CaptureBase):
         self.is_video_file = is_file
         if is_file:
             self.frame_count = self._capture.get(getattr(cv2,"CAP_PROP_FRAME_COUNT",7))
+            self.filename = os.path.abspath(identifier)
         self.noncritical_errors = VideoDeviceReadError,
 
         if np.isnan(self.fps):
