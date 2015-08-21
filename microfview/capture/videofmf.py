@@ -38,6 +38,7 @@ class FMFCapture(CaptureBase):
         self.frame_width = self._mov.width
         self.frame_height = self._mov.height
         self.is_video_file = True
+        self.filename = filename
 
     def seek_frame(self, n):
         self._mov.seek(n)
