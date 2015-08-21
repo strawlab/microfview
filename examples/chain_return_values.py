@@ -33,13 +33,13 @@ if __name__ == "__main__":
     cam = get_capture_object("synth:class=dot:fps=2:nframes=10")
     fview = Microfview(cam)
 
-    chain = PluginChain((
+    chain = PluginChain(
                 MyPlugin('even',
                          lambda: random.choice((2,4,6,8)),
                          5),
                 MyPlugin('odd',
                          lambda: random.choice((1,3,5,7)),
-                         10))
+                         10)
     )
     fview.attach_plugin(chain)
     fview.attach_plugin(DisplayPlugin('chain'))

@@ -32,14 +32,14 @@ if __name__ == "__main__":
     cam = get_capture_object("synth:class=dot:bg=%s" % bg)
     fview = Microfview(cam)
 
-    blue = PluginChain((ChannelSeparator(0),
-                        DisplayPlugin('blue', show_original_frame=False)))
+    blue = PluginChain(ChannelSeparator(0),
+                       DisplayPlugin('blue', show_original_frame=False))
     fview.attach_plugin(blue)
-    green = PluginChain((ChannelSeparator(1),
-                        DisplayPlugin('green', show_original_frame=False)))
+    green = PluginChain(ChannelSeparator(1),
+                        DisplayPlugin('green', show_original_frame=False))
     fview.attach_plugin(green)
-    red = PluginChain((ChannelSeparator(2),
-                        DisplayPlugin('red', show_original_frame=False)))
+    red = PluginChain(ChannelSeparator(2),
+                      DisplayPlugin('red', show_original_frame=False))
     fview.attach_plugin(red)
     fview.attach_plugin(DisplayPlugin('original-image'))
     fview.main()

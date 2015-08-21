@@ -104,7 +104,10 @@ class _Plugin(object):
 
 class PluginChain(_Plugin):
 
-    def __init__(self, plugins, return_last_frame=True, every=1, logger=None):
+    def __init__(self, *plugins, **kwargs):
+        every = kwargs.get('every', 1)
+        logger = kwargs.get('logger', None)
+        return_last_frame = kwargs.get('return_last_frame', False)
         super(PluginChain, self).__init__(every, logger)
         if not isinstance(plugins, tuple):
             raise ValueError('plugins must be a tuple')
