@@ -17,7 +17,6 @@ class ImageTransform(object):
 
         if config.get('mask'):
             self._contour = [np.array(c) for c in config['mask']]
-            print self._contour
             self._mask = None
         else:
             self._contour = None
@@ -42,6 +41,7 @@ class ImageTransform(object):
                     cv2.drawContours(self._mask, [c], 0, (0, 0, 0), -1) #-1 = CV_FILLED
             return cv2.bitwise_and(img, img, mask=self._mask)
         if self._roi is not None:
+            # slice works if image is 1 or 3 channel
             return img[self._roi[1], self._roi[0]]
         return img
 
