@@ -60,6 +60,20 @@ class Microfview(threading.Thread):
 
         self.finished = False
 
+    @classmethod
+    def new_from_commandline_args(cls, args):
+        from .capture import get_capture_object
+        from .util import parse_config_file
+        conf = parse_config_file(args.config)
+        cam = get_capture_object(args.capture, conf)
+        return cls(cam, visible=not args.hide, debug=args.debug)
+
+    @classmethod
+    def new_from_commandline(cls):
+        from .util import get_argument_parser
+        parser = get_argument_parser()
+        return Microfview.new_from_commandline_args(parser.parse_args())
+
     def attach_profiler(self, callback_func, *callback_args):
         """Attaches a function to be called after every iteration that
         is passed a dictionary showing how long each plugin took to execute"""
