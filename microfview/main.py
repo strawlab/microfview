@@ -57,6 +57,7 @@ class Microfview(threading.Thread):
 
         self._callback_names = {}
         self._profile = None
+        self._framestores = []
 
         self.finished = False
 
@@ -80,6 +81,11 @@ class Microfview(threading.Thread):
         if not hasattr(callback_func, '__call__'):
             raise TypeError("callback_func has to be callable")
         self._profile = (callback_func, callback_args)
+
+    def attach_framestore(self, obj):
+        """Attaches a FrameStore instance that will be called after every
+        frame to save any relevant data for that frame"""
+        self._framestores.append(obj)
 
     def attach_callback(self, callback_func, every=1):
         """Attaches a callback function, which is called on every Nth frame.
@@ -153,10 +159,16 @@ class Microfview(threading.Thread):
     def run(self):
         """main loop. do not call directly."""
         # start all plugins
+        schema = {}
         for plugin in self._plugins.itervalues():
             plugin.set_debug(self._debug)
             plugin.set_visible(self._visible)
             plugin.start(self.frame_capture)
+            schema.update(plugin.get_schema())
+
+        # initialize all frame stores
+        for s in self._framestores:
+            s.open(schema)
 
         call_cvwaitkey = any(p.shows_windows for p in self._plugins.itervalues())
         logger.info('will call waitkey: %s' % call_cvwaitkey)
@@ -242,8 +254,9 @@ class Microfview(threading.Thread):
                                     buf = ret
 
                                 if ret_state is not None:
-                                    #fixme: save to database or csv except 'KEY', "ORIGINAL_FRAME'
-                                    pass
+                                    # save to frame store
+                                    for s in self._framestores:
+                                        s.store(cn, buf, frame_number, self.frame_count, frame_timestamp, now, ret_state)
 
                             execution_times[cn] = t1 - t0
 
@@ -279,6 +292,8 @@ class Microfview(threading.Thread):
             # stop the plugins
             for plugin in self._plugins.itervalues():
                 plugin.stop()
+            for s in self._framestores:
+                s.close()
 
         self.finished = True
 

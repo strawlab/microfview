@@ -101,6 +101,10 @@ class _Plugin(object):
     def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         raise NotImplementedError
 
+    def get_schema(self):
+        """optionally return a dict describing any data hat is returned for this frame"""
+        return {}
+
 
 class PluginChain(_Plugin):
 
