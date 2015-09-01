@@ -66,8 +66,10 @@ class _MovingDot(_SynthBase):
 
         self._vx = self._vy = kwargs.get('speed', 5)
         self._pos = int(random.random()*self.frame_size[0]), int(random.random()*self.frame_size[1])
-        self._size = int(kwargs.get('size', 10))
+        self._size = int(kwargs.get('size', 15))
         self._dotnoise = float(kwargs.get('dotnoise',0))
+
+        self.last_frame_metadata['dot_size'] = self._size
 
     def render(self, buf):
         x,y = self._pos
@@ -89,10 +91,13 @@ class _MovingDot(_SynthBase):
             x += ((random.random() - 0.5) * self._dotnoise)
             y += ((random.random() - 0.5) * self._dotnoise)
 
+        # render the circle
+        self.last_frame_metadata['dot_position'] = self._pos
         cv2.circle(buf, (int(x),int(y)), self._size, (0, 0, 255), -1)
+        cv2.circle(buf, (int(x+(0.5*self._size)-1),int(y+(0.5*self._size)-1)),
+                   int(self._size/2.0), (0, 0, 127), -1)
 
         self._pos = x,y
-
 
 class SynthCapture(CaptureBase):
     def __init__(self, desc):
@@ -133,3 +138,7 @@ class SynthCapture(CaptureBase):
 
     def get_last_framenumber(self):
         return self._i
+
+    def get_last_metadata(self):
+        return self._capture.last_frame_metadata
+
