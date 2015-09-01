@@ -99,6 +99,14 @@ class CaptureBase(object):
     def grab_next_frame_blocking(self):
         raise NotImplementedError
 
+    def get_last_timestamp(self):
+        """returns the timestamp of the last frame."""
+        raise NotImplementedError
+
+    def get_last_framenumber(self):
+        """returns the framenumber of the last frame."""
+        raise NotImplementedError
+
     def grab_next_frame(self):
         img = self.grab_next_frame_blocking()
         if self.transform is not None:
