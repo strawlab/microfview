@@ -28,6 +28,8 @@ class _SynthBase(object):
         self._noise = float(noise)
         self._t0 = time.time()
 
+        self.last_frame_metadata = {}
+
     def render(self, buf):
         pass
 

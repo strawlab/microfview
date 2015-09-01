@@ -31,7 +31,7 @@ class DisplayPlugin(BlockingPlugin):
         cv2.destroyWindow(self._window_name)
 
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
-        cv2.imshow(self._window_name, frame if not self._show_original_frame else state['ORIGINAL_FRAME'])
+        cv2.imshow(self._window_name, frame if not self._show_original_frame else state['FRAME_ORIGINAL'])
         ch = state.get('KEY')
         if ch == 27:
             raise PluginFinished

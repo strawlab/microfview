@@ -107,6 +107,10 @@ class CaptureBase(object):
         """returns the framenumber of the last frame."""
         raise NotImplementedError
 
+    def get_last_metadata(self):
+        """returns a dict of other metadata to associate with this frame"""
+        return {}
+
     def grab_next_frame(self):
         img = self.grab_next_frame_blocking()
         if self.transform is not None:

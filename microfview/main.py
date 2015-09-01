@@ -182,7 +182,7 @@ class Microfview(threading.Thread):
             execution_times = collections.OrderedDict({n:time.time() for n in self._callback_names.values()})
             execution_times['TOTAL'] = time.time()
 
-            state = {'KEY':None, 'ORIGINAL_FRAME':None}
+            state = {'KEY':None, 'FRAME_ORIGINAL':None, 'FRAME_METADATA':None}
 
             capture_is_color = None
 
@@ -213,7 +213,8 @@ class Microfview(threading.Thread):
                 else:
                     buf = frame
 
-                state['ORIGINAL_FRAME'] = frame
+                state['FRAME_ORIGINAL'] = frame
+                state['FRAME_METADATA'] = self.frame_capture.get_last_metadata()
 
                 frame_timestamp = self.frame_capture.get_last_timestamp()
                 frame_number = self.frame_capture.get_last_framenumber()
