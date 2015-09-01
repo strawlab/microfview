@@ -121,7 +121,7 @@ class SynthCapture(CaptureBase):
         self._ts = time.time()
         self.fps = self._capture.fps
         self.frame_width = self._capture.frame_size[0]
-        self.frame_height = self._capture.frame_size[0]
+        self.frame_height = self._capture.frame_size[1]
         self.is_video_file = False
         self.frame_count = self._capture.nframes
 
