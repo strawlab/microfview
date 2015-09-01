@@ -76,11 +76,8 @@ class _Plugin(object):
                 cv2.namedWindow(name, getattr(cv2, 'WINDOW_AUTOSIZE', 1))
 
     def window_show(self, name, img):
-        if self.visible:
-            if img is None:
-                self.logger.warn('image frame was None')
-            else:
-                cv2.imshow(name, img)
+        if self.visible and (img is not None):
+            cv2.imshow(name, img)
 
     def window_destroy(self, name):
         if self.visible:
