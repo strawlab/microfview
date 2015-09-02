@@ -70,11 +70,18 @@ class _MovingDot(_SynthBase):
         super(_MovingDot, self).__init__(**kwargs)
 
         self._vx = self._vy = kwargs.get('speed', 5)
-        self._pos = int(random.random()*self.frame_size[0]), int(random.random()*self.frame_size[1])
-        self._size = int(kwargs.get('size', 15))
+        try:
+            self._pos = int(kwargs['initial_x']), int(kwargs['initial_y'])
+        except KeyError:
+            self._pos = int(random.random()*self.frame_size[0]), int(random.random()*self.frame_size[1])
+        try:
+            self._fill = map(int,kwargs['fill_bgr'].split(','))
+        except KeyError:
+            self._fill = (0,0,255)
+        self._radius = int(kwargs.get('radius', 15))
         self._dotnoise = float(kwargs.get('dotnoise',0))
 
-        self.last_frame_metadata['dot_size'] = self._size
+        self.last_frame_metadata['dot_radius'] = self._radius
 
     def render(self, buf):
         x,y = self._pos
@@ -96,13 +103,11 @@ class _MovingDot(_SynthBase):
             x += ((random.random() - 0.5) * self._dotnoise)
             y += ((random.random() - 0.5) * self._dotnoise)
 
+        self._pos = x,y
+
         # render the circle
         self.last_frame_metadata['dot_position'] = self._pos
-        cv2.circle(buf, (int(x),int(y)), self._size, (0, 0, 255), -1)
-        cv2.circle(buf, (int(x+(0.5*self._size)-1),int(y+(0.5*self._size)-1)),
-                   int(self._size/2.0), (0, 0, 127), -1)
-
-        self._pos = x,y
+        cv2.circle(buf, (int(x),int(y)), self._radius, self._fill, -1)
 
 class SynthCapture(CaptureBase):
     def __init__(self, desc):

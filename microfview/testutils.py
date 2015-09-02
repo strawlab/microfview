@@ -29,9 +29,18 @@ def get_test_instance(fps=2, nframes=10, display=False):
     return s.state
 
 
-def get_test_frame(color=False):
-    cam = get_capture_object("synth:class=dot:fps=0:nframes=1")
+def get_test_frame(frame_type='grascaley'):
+    assert frame_type in ('binary','grayscale','color')
+
+    synthdesc = "synth:class=dot:fps=0:nframes=1:initial_x=200:initial_y=300"
+    if frame_type == 'binary':
+        synthdesc += ":fill_bgr=255,255,255"
+    else:
+        synthdesc += ":fill_bgr=0,0,255"
+    cam = get_capture_object(synthdesc)
+
     img = cam.grab_next_frame_blocking()
-    if not color:
+    if frame_type != 'color':
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
     return img, cam.get_last_metadata()
