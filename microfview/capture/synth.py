@@ -1,10 +1,12 @@
-import cv2
 import time
 import random
+import os.path
 
+import cv2
 import numpy as np
 
 from . import CaptureBase
+from .. import data_dir
 
 class _SynthBase(object):
     def __init__(self, size=None, noise=0.0, bg=None, fps=25, nframes=np.inf, **kwargs):
@@ -14,9 +16,12 @@ class _SynthBase(object):
         self._bg = None
         self.frame_size = (640, 480)
         if bg is not None:
+            # try the passed path and paths in the package datadir
             self._bg = cv2.imread(bg, 1)
             if self._bg is None:
-                raise ValueError('%s not found' % bg)
+                self._bg = cv2.imread(os.path.join(data_dir, bg), 1)
+                if self._bg is None:
+                    raise ValueError('%s not found' % bg)
             h, w = self._bg.shape[:2]
             self.frame_size = (w, h)
 
