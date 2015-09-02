@@ -21,5 +21,6 @@ setup(
     author_email='john.stowers@gmail.com',
     packages=['microfview',],
     scripts=['bin/micro-fview'],
+    include_package_data=True,
 )
 
