@@ -139,7 +139,11 @@ class PluginChain(_Plugin):
 
         for p in self._plugins:
             _ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, ret)
-            # see main.py for the logic here
+            # if ret is False, the non-blocking plugin was
+            # still processing the old frame.
+            # if it is None then the plugin didn't return
+            # anything useful
+            # if is a 2-tuple then it is a frame and a dict
             if _ret is not None:
                 ret_state = None
                 if _ret is False:
