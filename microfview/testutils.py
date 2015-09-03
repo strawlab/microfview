@@ -21,11 +21,12 @@ class DummyPlugin(BlockingPlugin):
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state): pass
 
 
-def get_test_instance(fps=0, nframes=100, display=False):
+def get_test_instance(fps=0, nframes=100, display=False, cam=None, synthdesc=''):
     fps = int(os.environ.get('UFVIEW_TEST_FPS', fps))
     display = int(os.environ.get('UFVIEW_TEST_DISPLAY', display))
-    cam = get_capture_object("synth:class=dot:fps=%d:nframes=%d" % (fps, nframes))
-    fview = Microfview(cam)
+    if cam is None:
+        cam = get_capture_object("synth:class=dot:fps=%d:nframes=%d:%s" % (fps, nframes, synthdesc))
+    fview = Microfview(cam, visible=bool(display), debug=False)
     s = StateFrameStore()
     fview.attach_framestore(s)
     if display:
