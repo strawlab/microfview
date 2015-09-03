@@ -35,10 +35,11 @@ class _SynthBase(object):
 
         self.last_frame_metadata = {}
 
-    def render(self, buf):
+    def render(self, buf, frame_count):
+        """override this function to draw on the background"""
         pass
 
-    def read(self, dst=None):
+    def read(self, frame_count):
         if self.fps > 0.0:
             t1 = time.time()
             dt = t1 - self._t0
@@ -56,7 +57,7 @@ class _SynthBase(object):
         else:
             buf = self._bg.copy()
 
-        self.render(buf)
+        self.render(buf, frame_count)
 
         if self._noise > 0.0:
             noise = np.zeros((h, w, 3), np.int8)
@@ -83,7 +84,7 @@ class _MovingDot(_SynthBase):
 
         self.last_frame_metadata['dot_radius'] = self._radius
 
-    def render(self, buf):
+    def render(self, buf, frame_count):
         x,y = self._pos
         w,h = self.frame_size
 
@@ -138,7 +139,7 @@ class SynthCapture(CaptureBase):
     def grab_next_frame_blocking(self):
         if self._i >= self.frame_count:
             raise EOFError
-        _, buf = self._capture.read()
+        _, buf = self._capture.read(self._i)
         self._i += 1
         self._ts = time.time()
         return buf
