@@ -110,21 +110,34 @@ class _MovingDot(_SynthBase):
         self.last_frame_metadata['dot_position'] = self._pos
         cv2.circle(buf, (int(x),int(y)), self._radius, self._fill, -1)
 
+
 class SynthCapture(CaptureBase):
-    def __init__(self, desc):
+    def __init__(self, desc, synthcls=None):
         super(SynthCapture, self).__init__()
 
         chunks = desc.split(':')
         if (len(chunks) > 1) and chunks[1]:
-            params = dict(s.split('=') for s in chunks[1:])
+
+            params = {}
+            for s in chunks[1:]:
+                try:
+                    k,v = s.split('=')
+                    params[k] = v
+                except ValueError:
+                    pass
+
             if 'class' in params:
                 classname = params.pop('class')
                 if classname == 'dot':
                     self._capture = _MovingDot(**params)
                 else:
                     raise NotImplementedError
+            elif synthcls is not None:
+                self._capture = synthcls(**params)
             else:
                 self._capture = _SynthBase(**params)
+        elif synthcls is not None:
+            self._capture = synthcls()
         else:
             self._capture = _SynthBase()
 
