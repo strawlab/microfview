@@ -2,7 +2,7 @@ import os
 
 import cv2
 
-from . import Microfview, DisplayPlugin, get_capture_object
+from . import Microfview, DisplayPlugin, BlockingPlugin, get_capture_object
 from .store import FrameStore
 
 
@@ -15,18 +15,29 @@ class StateFrameStore(FrameStore):
         self.state.append(state)
 
 
-def get_test_instance(fps=2, nframes=10, display=False):
+class DummyPlugin(BlockingPlugin):
+    def start(self, capture_object): pass
+    def stop(self): pass
+    def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state): pass
+
+
+def get_test_instance(fps=0, nframes=100, display=False):
     fps = int(os.environ.get('UFVIEW_TEST_FPS', fps))
     display = int(os.environ.get('UFVIEW_TEST_DISPLAY', display))
-
     cam = get_capture_object("synth:class=dot:fps=%d:nframes=%d" % (fps, nframes))
     fview = Microfview(cam)
     s = StateFrameStore()
     fview.attach_framestore(s)
     if display:
         fview.attach_plugin(DisplayPlugin('test'))
+    return fview, s
+
+
+def run_test_instance_and_plugins(*plugins, **kwargs):
+    fview, framestore = get_test_instance(**kwargs)
+    map(fview.attach_plugin, plugins)
     fview.main()
-    return s.state
+    return framestore.state
 
 
 def get_test_frame(frame_type='grascaley'):
