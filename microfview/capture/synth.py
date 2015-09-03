@@ -70,11 +70,15 @@ class _MovingDot(_SynthBase):
     def __init__(self, **kwargs):
         super(_MovingDot, self).__init__(**kwargs)
 
+        self._radius = int(kwargs.get('radius', 15))
         self._vx = self._vy = kwargs.get('speed', 5)
         try:
             self._pos = int(kwargs['initial_x']), int(kwargs['initial_y'])
         except KeyError:
-            self._pos = int(random.random()*self.frame_size[0]), int(random.random()*self.frame_size[1])
+            # start fully inside the window
+            x = self._radius + (random.random() * (self.frame_size[0] - 2*self._radius - 2))
+            y = self._radius + (random.random() * (self.frame_size[1] - 2*self._radius - 2))
+            self._pos = int(x), int(y)
         try:
             self._fill = map(int,kwargs['fill_bgr'].split(','))
         except KeyError:
