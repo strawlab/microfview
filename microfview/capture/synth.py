@@ -33,7 +33,8 @@ class _SynthBase(object):
         self._noise = float(noise)
         self._t0 = time.time()
 
-        self.last_frame_metadata = {}
+    def get_last_frame_metadata(self):
+        return {}
 
     def render(self, buf, frame_count):
         """override this function to draw on the background"""
@@ -86,8 +87,6 @@ class _MovingDot(_SynthBase):
         self._radius = int(kwargs.get('radius', 15))
         self._dotnoise = float(kwargs.get('dotnoise',0))
 
-        self.last_frame_metadata['dot_radius'] = self._radius
-
     def render(self, buf, frame_count):
         x,y = self._pos
         w,h = self.frame_size
@@ -111,8 +110,10 @@ class _MovingDot(_SynthBase):
         self._pos = x,y
 
         # render the circle
-        self.last_frame_metadata['dot_position'] = self._pos
         cv2.circle(buf, (int(x),int(y)), self._radius, self._fill, -1)
+
+    def get_last_frame_metadata(self):
+        return {'dot_radius':self._radius, 'dot_position':self._pos}
 
 
 class SynthCapture(CaptureBase):
@@ -168,5 +169,5 @@ class SynthCapture(CaptureBase):
         return self._i
 
     def get_last_metadata(self):
-        return self._capture.last_frame_metadata
+        return self._capture.get_last_frame_metadata()
 
