@@ -243,6 +243,8 @@ class Microfview(threading.Thread):
                             ret = cb(buf, frame_number, self.frame_count, frame_timestamp, now, state)
                             t1 = time.time()
 
+                            dbg_s = [cn]
+
                             # if ret is False, the non-blocking plugin was
                             # still processing the old frame.
                             # if it is None then the plugin didn't return
@@ -251,18 +253,29 @@ class Microfview(threading.Thread):
                             if ret is not None:
                                 ret_state = None
                                 if ret is False:
-                                    pass
+                                    dbg_s.append('BUSY')
                                 elif isinstance(ret, tuple):
                                     buf, ret_state = ret
+                                    dbg_s.append('returned img and state')
                                 elif isinstance(ret, dict):
                                     ret_state = ret
+                                    dbg_s.append('returned state')
                                 elif isinstance(ret, np.ndarray):
                                     buf = ret
+                                    dbg_s.append('returned image')
 
                                 if ret_state is not None:
+                                    state.update(ret_state)
+                                    dbg_s.append('current state: %s %s' % (state.keys(), id(state)))
+
+                                if ret_state:
                                     # save to frame store
                                     for s in self._framestores:
                                         s.store(cn, buf, frame_number, self.frame_count, frame_timestamp, now, ret_state)
+                            else:
+                                dbg_s.append('returned None')
+
+                            #print ' '.join(dbg_s)
 
                             execution_times[cn] = t1 - t0
 
