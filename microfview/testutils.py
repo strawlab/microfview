@@ -12,7 +12,12 @@ class StateFrameStore(FrameStore):
         self.state = []
 
     def store(self, callback_name, buf, frame_number, frame_count, frame_timestamp, now, state):
-        self.state.append(state)
+        # storing the original image wastes memory for tests
+        try: state['FRAME_ORIGINAL']
+        except KeyError: pass
+        try: state['KEY']
+        except KeyError: pass
+        self.state.append(state.copy())
 
 
 class DummyPlugin(BlockingPlugin):
