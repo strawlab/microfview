@@ -56,6 +56,7 @@ class Microfview(threading.Thread):
         self._plugins = collections.OrderedDict()
 
         self._callback_names = {}
+        self._profile_timestore = None
         self._profile = None
         self._framestores = []
 
@@ -64,11 +65,13 @@ class Microfview(threading.Thread):
     @classmethod
     def new_from_commandline_args(cls, args, cam=None):
         from .capture import get_capture_object
-        from .util import parse_config_file
+        from .util import parse_config_file, print_mean_fps
         conf = parse_config_file(args.config)
         if cam is None:
             cam = get_capture_object(args.capture, conf)
         obj = cls(cam, visible=not args.hide, debug=args.debug)
+        if args.print_fps:
+            obj.attach_profiler(print_mean_fps)
         return obj
 
     @classmethod
@@ -77,12 +80,13 @@ class Microfview(threading.Thread):
         parser = get_argument_parser()
         return Microfview.new_from_commandline_args(parser.parse_args(), cam=cam)
 
-    def attach_profiler(self, callback_func, *callback_args):
+    def attach_profiler(self, callback_func):
         """Attaches a function to be called after every iteration that
         is passed a dictionary showing how long each plugin took to execute"""
         if not hasattr(callback_func, '__call__'):
             raise TypeError("callback_func has to be callable")
-        self._profile = (callback_func, callback_args)
+        self._profile_timestore = collections.defaultdict(lambda: collections.deque(maxlen=10))
+        self._profile = callback_func
 
     def attach_framestore(self, obj):
         """Attaches a FrameStore instance that will be called after every
@@ -284,8 +288,9 @@ class Microfview(threading.Thread):
                         break
 
                 if self._profile is not None:
-                    #pass on the callback args
-                    self._profile[0](execution_times, *self._profile[1])
+                    for et in execution_times:
+                        self._profile_timestore[et].append(execution_times[et])
+                    self._profile(execution_times, self._profile_timestore)
 
                 if call_cvwaitkey:
                     state['KEY'] = 0xFF & cv2.waitKey(1)

@@ -5,6 +5,7 @@ import argparse
 
 import json
 import yaml
+import numpy as np
 
 
 def get_logger():
@@ -28,6 +29,8 @@ def get_argument_parser():
                         help='hide windows')
     parser.add_argument('--debug', action='store_true', default=False,
                         help='debug')
+    parser.add_argument('--print-fps', action='store_true', default=False,
+                        help='print frames per second of plugins')
     return parser
 
 def parse_config_file(filename):
@@ -42,3 +45,9 @@ def parse_config_file(filename):
 
     return config
 
+
+def print_mean_fps(execution_times, accum):
+    print 'PLUGIN FPS'
+    for et in execution_times:
+        print "    %s %.0f" % (et, 1.0/np.mean(accum[et]))
+    print ''
