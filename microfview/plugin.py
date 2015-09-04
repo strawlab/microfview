@@ -108,12 +108,12 @@ class PluginChain(_Plugin):
     def __init__(self, *plugins, **kwargs):
         every = kwargs.get('every', 1)
         logger = kwargs.get('logger', None)
-        return_last_frame = kwargs.get('return_last_frame', False)
         super(PluginChain, self).__init__(every, logger)
         if not isinstance(plugins, tuple):
             raise ValueError('plugins must be a tuple')
         self._plugins = list(plugins)
-        self._return_last_frame = return_last_frame
+        self._return_last_frame = kwargs.get('return_last_frame', False)
+        self._return_last_state = kwargs.get('return_last_state', True)
         self.shows_windows = any(p.shows_windows for p in self._plugins)
         self.uses_color = any(p.uses_color for p in self._plugins)
 
@@ -135,37 +135,36 @@ class PluginChain(_Plugin):
         map(lambda x: x.stop(), self._plugins)
 
     def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
-        ret = state or dict()
+        ret_state = state or dict()
 
         for p in self._plugins:
-            _ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, ret)
+            _ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, ret_state)
             # if ret is False, the non-blocking plugin was
             # still processing the old frame.
             # if it is None then the plugin didn't return
             # anything useful
             # if is a 2-tuple then it is a frame and a dict
             if _ret is not None:
-                ret_state = None
+                _ret_state = None
                 if _ret is False:
                     pass
                 elif isinstance(_ret, tuple):
-                    frame, ret_state = _ret
+                    frame, _ret_state = _ret
                 elif isinstance(_ret, dict):
-                    ret_state = _ret
+                    _ret_state = _ret
                 elif isinstance(_ret, np.ndarray):
                     frame = _ret
-                if ret_state is not None:
-                    ret.update(ret_state)
+                if _ret_state is not None:
+                    ret_state.update(_ret_state)
 
-        if self._return_last_frame:
-            return ret
+        if self._return_last_frame and self._return_last_frame:
+            return frame, ret_state
+        elif self._return_last_frame:
+            return frame
+        elif self._return_last_state:
+            return ret_state
         else:
-            if isinstance(_ret, tuple):
-                return _ret[1]
-            elif isinstance(_ret, dict):
-                return _ret
-            else:
-                return None
+            return None
 
 class BlockingPlugin(_Plugin):
 
