@@ -8,7 +8,7 @@ from .transform import ImageTransform
 logger = logging.getLogger('microfview.capture')
 
 
-def get_capture_object(desc, options_dict=None):
+def get_capture_object(desc, cap_fallback=None, options_dict=None):
     if options_dict is None:
         capture_options = transform_options = {}
     else:
@@ -23,7 +23,10 @@ def get_capture_object(desc, options_dict=None):
     except KeyError:
         use_opencv = True
 
-    if desc.startswith('synth:'):
+    if (not desc) and (cap_fallback is not None):
+        logging.info('Using provided capture object: %r' % cap)
+        cap = cap_fallback
+    elif desc.startswith('synth:'):
         from .synth import SynthCapture
         cap = SynthCapture(desc)
     elif os.path.isfile(desc):

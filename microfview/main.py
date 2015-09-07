@@ -63,22 +63,21 @@ class Microfview(threading.Thread):
         self.finished = False
 
     @classmethod
-    def new_from_commandline_args(cls, args, cam=None):
+    def new_from_commandline_args(cls, args, cap_fallback=None):
         from .capture import get_capture_object
         from .util import parse_config_file, print_mean_fps
         conf = parse_config_file(args.config)
-        if cam is None:
-            cam = get_capture_object(args.capture, conf)
-        obj = cls(cam, visible=not args.hide, debug=args.debug)
+        cap_fallback = get_capture_object(args.capture, cap_fallback=cap_fallback, options_dict=conf)
+        obj = cls(cap_fallback, visible=not args.hide, debug=args.debug)
         if args.print_fps:
             obj.attach_profiler(print_mean_fps)
         return obj
 
     @classmethod
-    def new_from_commandline(cls, cam=None):
+    def new_from_commandline(cls, cap_fallback=None):
         from .util import get_argument_parser
         parser = get_argument_parser()
-        return Microfview.new_from_commandline_args(parser.parse_args(), cam=cam)
+        return Microfview.new_from_commandline_args(parser.parse_args(), cap_fallback=cap_fallback)
 
     def attach_profiler(self, callback_func):
         """Attaches a function to be called after every iteration that
