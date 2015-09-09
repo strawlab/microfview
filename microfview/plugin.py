@@ -66,8 +66,8 @@ class _Plugin(object):
     def set_visible(self, v):
         self.visible = v
 
-    def window_create(self, name, size, resizable=True):
-        if self.visible:
+    def debug_window_create(self, name, size, resizable=True):
+        if self.debug:
             if resizable:
                 cv2.namedWindow(name, getattr(cv2,'WINDOW_NORMAL',0))
                 if (size[0] > 0) and (not np.isnan(size[0])):
@@ -76,12 +76,12 @@ class _Plugin(object):
             else:
                 cv2.namedWindow(name, getattr(cv2, 'WINDOW_AUTOSIZE', 1))
 
-    def window_show(self, name, img):
-        if self.visible and (img is not None):
+    def debug_window_show(self, name, img):
+        if self.debug and (img is not None):
             cv2.imshow(name, img)
 
-    def window_destroy(self, name):
-        if self.visible:
+    def debug_window_destroy(self, name):
+        if self.debug:
             cv2.destroyWindow(name)
 
     def start(self, capture_object):
