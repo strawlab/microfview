@@ -288,7 +288,7 @@ class Microfview(threading.Thread):
 
                                 if ret_state is not None:
                                     state_update(state, ret_state)
-                                    dbg_s.append('current state: %s %s' % (state.keys(), id(state)))
+                                    dbg_s.append('current state\n\t%s' % state.keys())
 
                                 if ret_state:
                                     # save to frame store
@@ -297,7 +297,7 @@ class Microfview(threading.Thread):
                             else:
                                 dbg_s.append('returned None')
 
-                            #print ' '.join(dbg_s)
+                            # print ' '.join(dbg_s)
 
                             execution_times[cn] = t1 - t0
 
