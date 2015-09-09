@@ -31,6 +31,8 @@ def get_argument_parser():
                         help='debug')
     parser.add_argument('--print-fps', action='store_true', default=False,
                         help='print frames per second of plugins')
+    parser.add_argument('--step', action='store_true', default=False,
+                        help='single frame step')
     return parser
 
 def parse_config_file(filename):
