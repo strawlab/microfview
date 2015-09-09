@@ -1,7 +1,7 @@
-import time
 import random
 
-from microfview import *
+from microfview import Microfview, BlockingPlugin, PluginChain, PluginFinished, get_capture_object
+
 
 class MyPlugin(BlockingPlugin):
 
@@ -30,8 +30,7 @@ if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.DEBUG)
 
-    cam = get_capture_object("synth:class=dot:fps=2:nframes=10")
-    fview = Microfview(cam)
+    fview = Microfview.new_from_commandline(cap_fallback=get_capture_object("synth:class=dot:fps=2:nframes=10"))
 
     chain = PluginChain(
                 MyPlugin('even',
@@ -42,7 +41,6 @@ if __name__ == "__main__":
                          10)
     )
     fview.attach_plugin(chain)
-    fview.attach_plugin(DisplayPlugin('chain'))
     fview.main()
 
 

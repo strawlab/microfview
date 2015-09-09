@@ -1,10 +1,7 @@
-import time
-import random
-import os.path
-
 import cv2
 
-from microfview import *
+from microfview import Microfview, PluginChain, DisplayPlugin, BlockingPlugin, get_capture_object
+
 
 class ChannelSeparator(BlockingPlugin):
 
@@ -27,10 +24,7 @@ if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.DEBUG)
 
-    bg = os.path.join(os.path.dirname(__file__),'..','data','graffiti.png')
-
-    cam = get_capture_object("synth:class=dot:bg=%s" % bg)
-    fview = Microfview(cam)
+    fview = Microfview.new_from_commandline(cap_fallback=get_capture_object("synth:class=dot:bg=graffiti.png"))
 
     blue = PluginChain(ChannelSeparator(0),
                        DisplayPlugin('blue', show_original_frame=False))
@@ -41,7 +35,7 @@ if __name__ == "__main__":
     red = PluginChain(ChannelSeparator(2),
                       DisplayPlugin('red', show_original_frame=False))
     fview.attach_plugin(red)
-    fview.attach_plugin(DisplayPlugin('original-image'))
+
     fview.main()
 
 

@@ -2,7 +2,7 @@ import os
 
 import cv2
 
-from . import Microfview, DisplayPlugin, BlockingPlugin, get_capture_object
+from . import Microfview, BlockingPlugin, get_capture_object
 from .store import FrameStore
 
 
@@ -35,7 +35,7 @@ def get_test_instance(fps=0, nframes=100, display=False, cam=None, synthdesc='')
     s = StateFrameStore()
     fview.attach_framestore(s)
     if display:
-        fview.attach_plugin(DisplayPlugin('test'))
+        fview.attach_display_plugin()
     return fview, s
 
 

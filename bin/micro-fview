@@ -1,25 +1,9 @@
 #!/usr/bin/env python
 
-from microfview import Microfview, get_capture_object, parse_config_file
-from microfview.plugins.display import DisplayPlugin
+from microfview import Microfview
 
 if __name__ == "__main__":
-    import time
     import logging
-    import argparse
-
     logging.basicConfig(level=logging.INFO)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('capture', default='', nargs='?', type=str,
-                        help='path to a video file or capture hardware device')
-    parser.add_argument('--config', type=str,
-                        help='path to a configuration file')
-    args = parser.parse_args()
-
-    conf = parse_config_file(args.config)
-
-    cam = get_capture_object(args.capture, conf)
-    fview = Microfview(cam)
-    fview.attach_plugin(DisplayPlugin('micro-fview'))
+    fview = Microfview.new_from_commandline()
     fview.main()

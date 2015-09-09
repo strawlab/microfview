@@ -17,6 +17,7 @@ logger = logging.getLogger('microfview')
 
 from .plugin import PluginFinished
 from .store import state_update
+from .plugins.display import DisplayPlugin
 
 # helper function for frame_capture checks
 def _has_method(obj, method):
@@ -61,6 +62,8 @@ class Microfview(threading.Thread):
         self._profile = None
         self._framestores = []
 
+        self._display_plugins = []
+
         self._waitkey_delay = 0 if single_frame_step else 1
 
         self.finished = False
@@ -74,6 +77,8 @@ class Microfview(threading.Thread):
         obj = cls(cap_fallback, visible=not args.hide, debug=args.debug, single_frame_step=args.step)
         if args.print_fps:
             obj.attach_profiler(print_mean_fps)
+        if not args.hide:
+            obj.attach_display_plugin()
         return obj
 
     @classmethod
@@ -81,6 +86,16 @@ class Microfview(threading.Thread):
         from .util import get_argument_parser
         parser = get_argument_parser()
         return Microfview.new_from_commandline_args(parser.parse_args(), cap_fallback=cap_fallback)
+
+    def attach_display_plugin(self, plugin=None):
+        """Attaches a display plugin to be called after every other plugin has
+        been called.
+
+        If no plugin is given, the default DisplayPlugin is used.
+        """
+        if plugin is None:
+            plugin = DisplayPlugin('microfview', show_original_frame=True, every=1)
+        self._display_plugins.append(plugin)
 
     def attach_profiler(self, callback_func):
         """Attaches a function to be called after every iteration that
@@ -166,6 +181,10 @@ class Microfview(threading.Thread):
 
     def run(self):
         """main loop. do not call directly."""
+        # display plugins are just normal plugins. Adding them here ensures they are
+        # called last
+        map(self.attach_plugin, self._display_plugins)
+
         # start all plugins
         schema = {}
         for plugin in self._plugins.itervalues():
