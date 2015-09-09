@@ -9,11 +9,16 @@ ContourType = collections.namedtuple("Contour", ['id', 'cx', 'cy', 'pts'])
 
 def state_update(old, new):
     for k in new:
-        if k in (STORE_TRACKED_OBJECT, STORE_CONTOUR):
-            old[k].append(new[k])
+        if k in SPECIAL_STATE_KEYS:
+            _new = new[k]
+            if isinstance(_new, list) and len(_new):
+                for __new in _new:
+                    if __new not in old[k]:
+                        old[k].append(__new)
+            else:
+                old[k].append(_new)
         else:
             old[k] = new[k]
-
 
 class FrameStore(object):
 
