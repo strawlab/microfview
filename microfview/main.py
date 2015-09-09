@@ -16,6 +16,7 @@ import logging
 logger = logging.getLogger('microfview')
 
 from .plugin import PluginFinished
+from .store import state_update
 
 # helper function for frame_capture checks
 def _has_method(obj, method):
@@ -218,9 +219,10 @@ class Microfview(threading.Thread):
                 else:
                     buf = frame
 
-                state = {'FRAME_ORIGINAL':frame,
-                         'FRAME_METADATA':self.frame_capture.get_last_metadata(),
-                         'KEY':None}
+                state = collections.defaultdict(list)
+                state['FRAME_ORIGINAL'] = frame
+                state['FRAME_METADATA'] = self.frame_capture.get_last_metadata()
+                state['KEY'] = None
 
                 frame_timestamp = self.frame_capture.get_last_timestamp()
                 frame_number = self.frame_capture.get_last_framenumber()
@@ -266,7 +268,7 @@ class Microfview(threading.Thread):
                                     dbg_s.append('returned image')
 
                                 if ret_state is not None:
-                                    state.update(ret_state)
+                                    state_update(state, ret_state)
                                     dbg_s.append('current state: %s %s' % (state.keys(), id(state)))
 
                                 if ret_state:

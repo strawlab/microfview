@@ -21,6 +21,7 @@ import logging
 import cv2
 import numpy as np
 
+from .store import state_update
 
 class PluginFinished(Exception):
     pass
@@ -155,7 +156,7 @@ class PluginChain(_Plugin):
                 elif isinstance(_ret, np.ndarray):
                     frame = _ret
                 if _ret_state is not None:
-                    ret_state.update(_ret_state)
+                    state_update(ret_state, _ret_state)
 
         if self._return_last_frame and self._return_last_frame:
             return frame, ret_state

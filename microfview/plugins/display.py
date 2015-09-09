@@ -3,7 +3,6 @@ import numpy as np
 
 from ..plugin import BlockingPlugin, PluginFinished
 
-
 class DisplayPlugin(BlockingPlugin):
 
     def __init__(self, window_name, show_original_frame=True, every=1):
