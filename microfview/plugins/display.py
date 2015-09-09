@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 from ..plugin import BlockingPlugin
-
+from ..store import SPECIAL_STATE_KEYS, TrackedObjectType, DetectedObjectType, ContourType
 
 class DisplayPlugin(BlockingPlugin):
 
@@ -32,6 +32,19 @@ class DisplayPlugin(BlockingPlugin):
         if self.visible:
             cv2.destroyWindow(self._window_name)
 
+    def _draw_state(self, frame, val):
+        if isinstance(val, ContourType):
+            # contours are drawn in red
+            cv2.circle(frame, (int(val.x),int(val.y)),2,(0,0,255),1)
+            cv2.drawContours(frame, [val.pts], 0, (0,0,255), 1)
+        elif isinstance(val, (TrackedObjectType, DetectedObjectType)):
+            # objects in green
+            cv2.circle(frame, (int(val.x),int(val.y)),3,(0,255,0),2)
+
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         if self.visible:
-            cv2.imshow(self._window_name, frame if not self._show_original_frame else state['FRAME_ORIGINAL'])
+            img = frame if not self._show_original_frame else state['FRAME_ORIGINAL']
+            for key in SPECIAL_STATE_KEYS:
+                for obj in state[key]:
+                    self._draw_state(img, obj)
+            cv2.imshow(self._window_name, img)
