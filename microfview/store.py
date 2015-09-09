@@ -1,10 +1,14 @@
 import collections
 
-STORE_TRACKED_OBJECT    = "UFVIEW_object"
-STORE_CONTOUR           = "UFVIEW_contour"
+DETECTED_OBJECT   = "UFVIEW_object"
+TRACKED_OBJECT    = "UFVIEW_tracked_object"
+CONTOUR           = "UFVIEW_contour"
 
-TrackedObjectType = collections.namedtuple('TrackedObject', ['id', 'x', 'y'])
-ContourType = collections.namedtuple("Contour", ['id', 'cx', 'cy', 'pts'])
+SPECIAL_STATE_KEYS = set((DETECTED_OBJECT, TRACKED_OBJECT, CONTOUR))
+
+DetectedObjectType = collections.namedtuple('TrackedObject', ['id', 'x', 'y'])
+TrackedObjectType = collections.namedtuple('TrackedObject', ['id', 'x', 'y', 'err'])
+ContourType = collections.namedtuple("Contour", ['id', 'x', 'y', 'pts'])
 
 
 def state_update(old, new):
