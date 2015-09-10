@@ -36,6 +36,7 @@ class _Plugin(object):
         finished (bool) : true if this plugin should quit
         shows_windows (bool) : true if this plugin shows an cv2 window
         uses_color (bool) : true if this plugin uses color information
+        identifier (string) : human readable name of this plugin
     """
 
     def __init__(self, every=1, logger=None):
