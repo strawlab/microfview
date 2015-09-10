@@ -116,12 +116,16 @@ class PluginChain(_Plugin):
         self._plugins = list(plugins)
         self._return_last_frame = kwargs.get('return_last_frame', False)
         self._return_last_state = kwargs.get('return_last_state', True)
+        self._name = kwargs.get('name', '')
         self.shows_windows = any(p.shows_windows for p in self._plugins)
         self.uses_color = any(p.uses_color for p in self._plugins)
 
     @property
     def identifier(self):
-        return '->'.join(p.identifier for p in self._plugins)
+        if self._name:
+            return self._name
+        else:
+            return '->'.join(p.identifier for p in self._plugins)
 
     def get_schema(self):
         schema = {}
