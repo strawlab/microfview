@@ -7,12 +7,9 @@ logger = logging.getLogger('microfview.capture.Transform')
 
 class ImageTransform(object):
 
-    LAYERS = ('foreground', 'background')
+    LAYERS = ('background',)
 
     def __init__(self, **config):
-        if any(config['foreground'][t] for t in ('mask','roi')):
-            logging.warn('foreground ignored for transform')
-
         config = config['background']
 
         if config.get('mask'):
