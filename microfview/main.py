@@ -69,7 +69,7 @@ class Microfview(threading.Thread):
         self.finished = False
 
     @classmethod
-    def new_from_commandline_args(cls, args, cap_fallback=None):
+    def new_from_commandline_args(cls, args, cap_fallback=None, add_display_plugin=True):
         from .capture import get_capture_object
         from .util import parse_config_file, print_mean_fps
         conf = parse_config_file(args.config)
@@ -77,15 +77,15 @@ class Microfview(threading.Thread):
         obj = cls(cap_fallback, visible=not args.hide, debug=args.debug, single_frame_step=args.step)
         if args.print_fps:
             obj.attach_profiler(print_mean_fps)
-        if not args.hide:
+        if add_display_plugin and (not args.hide):
             obj.attach_display_plugin()
         return obj
 
     @classmethod
-    def new_from_commandline(cls, cap_fallback=None):
+    def new_from_commandline(cls, cap_fallback=None, add_display_plugin=True):
         from .util import get_argument_parser
         parser = get_argument_parser()
-        return Microfview.new_from_commandline_args(parser.parse_args(), cap_fallback=cap_fallback)
+        return Microfview.new_from_commandline_args(parser.parse_args(), cap_fallback=cap_fallback, add_display_plugin=add_display_plugin)
 
     def attach_display_plugin(self, plugin=None):
         """Attaches a display plugin to be called after every other plugin has
