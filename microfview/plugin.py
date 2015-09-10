@@ -17,6 +17,7 @@ NonBlockingPlugin:
 import threading
 import time
 import logging
+import collections
 
 import cv2
 import numpy as np
@@ -147,7 +148,7 @@ class PluginChain(_Plugin):
         map(lambda x: x.stop(), self._plugins)
 
     def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
-        ret_state = state or dict()
+        ret_state = state or collections.defaultdict(list)
 
         for p in self._plugins:
             _ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, ret_state)
