@@ -296,7 +296,7 @@ class Microfview(threading.Thread):
                                     dbg_s.append('returned image')
 
                                 if ret_state is not None:
-                                    state_update(state, ret_state)
+                                    state_update(state, ret_state, cn)
                                     dbg_s.append('current state\n\t%s' % state.keys())
 
                                 if ret_state:

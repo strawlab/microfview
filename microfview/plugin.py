@@ -168,7 +168,7 @@ class PluginChain(_Plugin):
                 elif isinstance(_ret, np.ndarray):
                     frame = _ret
                 if _ret_state is not None:
-                    state_update(ret_state, _ret_state)
+                    state_update(ret_state, _ret_state, p.identifier)
 
         if self._return_last_frame and self._return_last_frame:
             return frame, ret_state

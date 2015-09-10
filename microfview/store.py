@@ -10,8 +10,7 @@ DetectedObjectType = collections.namedtuple('TrackedObject', ['id', 'x', 'y'])
 TrackedObjectType = collections.namedtuple('TrackedObject', ['id', 'x', 'y', 'err'])
 ContourType = collections.namedtuple("Contour", ['id', 'x', 'y', 'pts'])
 
-
-def state_update(old, new):
+def state_update(old, new, nick):
     for k in new:
         if k in SPECIAL_STATE_KEYS:
             _new = new[k]
