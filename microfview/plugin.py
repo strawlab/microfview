@@ -170,7 +170,7 @@ class PluginChain(_Plugin):
                 if _ret_state is not None:
                     state_update(ret_state, _ret_state, p.identifier)
 
-        if self._return_last_frame and self._return_last_frame:
+        if self._return_last_frame and self._return_last_state:
             return frame, ret_state
         elif self._return_last_frame:
             return frame
