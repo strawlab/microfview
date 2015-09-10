@@ -152,8 +152,15 @@ class Microfview(threading.Thread):
         """Detaches a callback."""
         if handle in self._callbacks:
             self._callbacks.remove(handle)
+            logger.debug('removed handle %r' % (handle,))
         else:
             raise ValueError("handle not attached.")
+        try:
+            plugin = self._plugins.pop(handle)
+            plugin.stop()
+            logger.info('removed plugin %r (%s)' % (plugin, plugin.identifier))
+        except KeyError:
+            logging.debug('handle was not from a plugin')
 
     def attach_plugin(self, plugin):
         """Attaches a plugin."""
@@ -170,14 +177,15 @@ class Microfview(threading.Thread):
 
     def detach_plugin(self, plugin):
         """Detaches a plugin."""
-        found = False
+        found_handle = False
         for handle,_plugin in self._plugins.iteritems():
             if _plugin == plugin:
-                found = True
+                found_handle = True
                 break
-        if found:
+        if found_handle:
             self.detach_callback(handle)
-            self._plugins.pop(_plugin)
+        else:
+            logger.warn('plugin %r (%s) not found' % (plugin, plugin.identifier))
 
     def run(self):
         """main loop. do not call directly."""
