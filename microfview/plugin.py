@@ -122,6 +122,12 @@ class PluginChain(_Plugin):
     def identifier(self):
         return '->'.join(p.identifier for p in self._plugins)
 
+    def get_schema(self):
+        schema = {}
+        for p in self._plugins:
+            schema.update(p.get_schema())
+        return schema
+
     def set_debug(self, d):
         map(lambda x: x.set_debug(d), self._plugins)
 

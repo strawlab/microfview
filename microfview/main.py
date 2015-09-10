@@ -191,7 +191,8 @@ class Microfview(threading.Thread):
             plugin.set_debug(self._debug)
             plugin.set_visible(self._visible)
             plugin.start(self.frame_capture)
-            schema.update(plugin.get_schema())
+
+            schema[plugin.identifier] = plugin.get_schema()
 
         # initialize all frame stores
         for s in self._framestores:
