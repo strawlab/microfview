@@ -26,7 +26,7 @@ def _has_method(obj, method):
 
 class Microfview(threading.Thread):
 
-    def __init__(self, frame_capture, visible=True, debug=True, single_frame_step=False):
+    def __init__(self, frame_capture, visible=True, debug=True, single_frame_step=False, stop_frame=0):
         """Microfview main class.
 
         Args:
@@ -53,6 +53,8 @@ class Microfview(threading.Thread):
         self.frame_count = 0
         self.frame_number_current = 0
 
+        self._stop_frame = stop_frame
+
         self._run = False
         self._callbacks = []
         self._plugins = collections.OrderedDict()
@@ -74,7 +76,7 @@ class Microfview(threading.Thread):
         from .util import parse_config_file, print_mean_fps
         conf = parse_config_file(args.config)
         cap_fallback = get_capture_object(args.capture, cap_fallback=cap_fallback, options_dict=conf)
-        obj = cls(cap_fallback, visible=not args.hide, debug=args.debug, single_frame_step=args.step)
+        obj = cls(cap_fallback, visible=not args.hide, debug=args.debug, single_frame_step=args.step, stop_frame=args.stop_frame)
         if args.print_fps:
             obj.attach_profiler(print_mean_fps)
         if add_display_plugin and (not args.hide):
@@ -322,7 +324,15 @@ class Microfview(threading.Thread):
                     cn = self._callback_names[handle[1]]
                     execution_times.pop(cn)
 
+                if self._profile is not None:
+                    for et in execution_times:
+                        self._profile_timestore[et].append(execution_times[et])
+                    self._profile(execution_times, self._profile_timestore)
+
                 if not self._callbacks:
+                    self.stop()
+
+                if self._stop_frame and (self.frame_count > self._stop_frame):
                     self.stop()
 
                 with self._lock:
@@ -330,15 +340,11 @@ class Microfview(threading.Thread):
                         logger.info("exiting main loop")
                         break
 
-                if self._profile is not None:
-                    for et in execution_times:
-                        self._profile_timestore[et].append(execution_times[et])
-                    self._profile(execution_times, self._profile_timestore)
-
                 if call_cvwaitkey:
                     state['KEY'] = 0xFF & cv2.waitKey(self._waitkey_delay)
                 elif self._waitkey_delay == 0:
                     raw_input('Press key to continue')
+
 
 
         finally:
