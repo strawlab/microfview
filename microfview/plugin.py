@@ -106,6 +106,23 @@ class _Plugin(object):
         return {}
 
 
+class FuncWrapperPlugin(_Plugin):
+    def __init__(self, func, name, every=1):
+        super(FuncWrapperPlugin, self).__init__(every=every)
+        self._func = func
+        self._name = name
+
+    @property
+    def identifier(self):
+        return self._name
+
+    def __eq__(self, other):
+        return isinstance(other, FuncWrapperPlugin) and (self._func == other._func) and (self.every == other.every)
+
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
+        return self._func(frame, frame_number, frame_count, frame_time, current_time, state)
+
+
 class PluginChain(_Plugin):
 
     def __init__(self, *plugins, **kwargs):

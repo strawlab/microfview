@@ -15,7 +15,7 @@ import numpy as np
 import logging
 logger = logging.getLogger('microfview')
 
-from .plugin import PluginFinished
+from .plugin import PluginFinished, FuncWrapperPlugin
 from .store import state_update
 from .plugins.display import DisplayPlugin
 
@@ -56,10 +56,9 @@ class Microfview(threading.Thread):
         self._stop_frame = stop_frame
 
         self._run = False
-        self._callbacks = []
-        self._plugins = collections.OrderedDict()
 
-        self._callback_names = {}
+        self._plugins = []
+
         self._profile_timestore = None
         self._profile = None
         self._framestores = []
@@ -120,7 +119,7 @@ class Microfview(threading.Thread):
           every:  integer > 0
 
         returns:
-          handle:  can be used to detach callback
+          plugin_object:  can be used to detach callback
         """
         if not hasattr(callback_func, '__call__'):
             raise TypeError("callback_func has to be callable")
@@ -128,41 +127,12 @@ class Microfview(threading.Thread):
             raise TypeError("every has to be of type int")
         if every < 1:
             raise ValueError("every has to be bigger than 0")
-        handle = (every, callback_func)
-        if handle in self._callbacks:
-            raise ValueError("callback_func, every combination exist.")
-        self._callbacks.append(handle)
 
-        #get a readable name for the plugin
-        cb_name = callback_func.func_name
-        if cb_name == "push_frame":
-            #the class name is more interesting as this is a plugin
-            try:
-                #classes can provide identifiers
-                cb_name = callback_func.im_self.identifier
-                if cb_name is None:
-                    raise AttributeError
-            except AttributeError:
-                #otherwise the class name will do
-                cb_name = callback_func.im_class.__name__
-        logging.debug("attached callback %s %r" % (cb_name, callback_func))
-        self._callback_names[callback_func] = cb_name
-
-        return handle
-
-    def detach_callback(self, handle):
-        """Detaches a callback."""
-        if handle in self._callbacks:
-            self._callbacks.remove(handle)
-            logger.debug('removed handle %r' % (handle,))
-        else:
-            raise ValueError("handle not attached.")
-        try:
-            plugin = self._plugins.pop(handle)
-            plugin.stop()
-            logger.info('removed plugin %r (%s)' % (plugin, plugin.identifier))
-        except KeyError:
-            logging.debug('handle was not from a plugin')
+        plug = FuncWrapperPlugin(callback_func, callback_func.func_name, every)
+        if plug in self._plugins:
+            raise ValueError("callback_func + every combination already exists")
+        self.attach_plugin(plug)
+        return plug
 
     def attach_plugin(self, plugin):
         """Attaches a plugin."""
@@ -172,22 +142,12 @@ class Microfview(threading.Thread):
                 _has_method(plugin, 'push_frame') and
                 hasattr(plugin, 'every')):
             raise TypeError("plugin does not have the required methods/attributes.")
-        handle = self.attach_callback(plugin.push_frame, every=plugin.every)
-        self._plugins[handle] = plugin
+        self._plugins.append(plugin)
         logger.info('attaching plugin %s (shows_windows: %s)' % (plugin.identifier, plugin.shows_windows))
-        return plugin, handle
 
     def detach_plugin(self, plugin):
         """Detaches a plugin."""
-        found_handle = False
-        for handle,_plugin in self._plugins.iteritems():
-            if _plugin == plugin:
-                found_handle = True
-                break
-        if found_handle:
-            self.detach_callback(handle)
-        else:
-            logger.warn('plugin %r (%s) not found' % (plugin, plugin.identifier))
+        self._plugins.remove(plugin)
 
     def run(self):
         """main loop. do not call directly."""
@@ -197,7 +157,7 @@ class Microfview(threading.Thread):
 
         # start all plugins
         schema = {}
-        for plugin in self._plugins.itervalues():
+        for plugin in self._plugins:
             plugin.set_debug(self._debug)
             plugin.set_visible(self._visible)
             plugin.start(self.frame_capture)
@@ -208,16 +168,16 @@ class Microfview(threading.Thread):
         for s in self._framestores:
             s.open(schema)
 
-        call_cvwaitkey = any(p.shows_windows for p in self._plugins.itervalues())
+        call_cvwaitkey = any(p.shows_windows for p in self._plugins)
         logger.info('will call waitkey: %s' % call_cvwaitkey)
 
-        all_grey_plugins = not any(p.uses_color for p in self._plugins.itervalues())
+        all_grey_plugins = not any(p.uses_color for p in self._plugins)
         logger.info('plugins all use grey images: %s' % all_grey_plugins)
 
         self._run = True
         try:
 
-            execution_times = collections.OrderedDict({n:time.time() for n in self._callback_names.values()})
+            execution_times = collections.OrderedDict({p.identifier:time.time() for p in self._plugins})
             execution_times['TOTAL'] = time.time()
 
             capture_is_color = None
@@ -265,15 +225,14 @@ class Microfview(threading.Thread):
 
                 self.frame_count += 1
 
-                finished_callback_handles = []
+                finished_plugins = []
                 now = time.time()
-                # call all attached callbacks.
-                for n, cb in self._callbacks:
-                    if self.frame_number_current % n == 0:
-                        cn = self._callback_names[cb]
+                for plugin in self._plugins:
+                    if self.frame_number_current % plugin.every == 0:
+                        cn = plugin.identifier
                         try:
                             t0 = time.time()
-                            ret = cb(buf, frame_number, self.frame_count, frame_timestamp, now, state)
+                            ret = plugin.push_frame(buf, frame_number, self.frame_count, frame_timestamp, now, state)
                             t1 = time.time()
 
                             dbg_s = [cn]
@@ -314,14 +273,14 @@ class Microfview(threading.Thread):
 
                         except PluginFinished:
                             logger.info("%s finished" % cn)
-                            finished_callback_handles.append((n, cb))
+                            finished_plugins.append(plugin)
 
                 if self._profile is not None:
                     execution_times['TOTAL'] = time.time() - now0
 
-                for handle in finished_callback_handles:
-                    self.detach_callback(handle)
-                    cn = self._callback_names[handle[1]]
+                for plugin in finished_plugins:
+                    self.detach_plugin(plugin)
+                    cn = plugin.identifier
                     execution_times.pop(cn)
 
                 if self._profile is not None:
@@ -329,7 +288,7 @@ class Microfview(threading.Thread):
                         self._profile_timestore[et].append(execution_times[et])
                     self._profile(execution_times, self._profile_timestore)
 
-                if not self._callbacks:
+                if not self._plugins:
                     self.stop()
 
                 if self._stop_frame and (self.frame_count > self._stop_frame):
@@ -349,7 +308,7 @@ class Microfview(threading.Thread):
 
         finally:
             # stop the plugins
-            for plugin in self._plugins.itervalues():
+            for plugin in self._plugins:
                 plugin.stop()
             for s in self._framestores:
                 s.close()
