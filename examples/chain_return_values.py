@@ -1,7 +1,15 @@
 import random
+import time
 
-from microfview import Microfview, BlockingPlugin, PluginChain, PluginFinished, get_capture_object
+from microfview import Microfview, NonBlockingPlugin, BlockingPlugin, PluginChain, PluginFinished, get_capture_object
 
+
+class TestNonBlocking(NonBlockingPlugin):
+
+    def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
+        time.sleep(0.2)
+        self.logger.debug("processed %d" % frame_count)
+        return {'block':frame_count}
 
 class MyPlugin(BlockingPlugin):
 
@@ -17,6 +25,7 @@ class MyPlugin(BlockingPlugin):
         return self.__class__.__name__ + ':' + self._k
 
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
+        time.sleep(0.1)
         if self._i > self._n:
             raise PluginFinished
         self._i += 1
@@ -41,6 +50,7 @@ if __name__ == "__main__":
                          10)
     )
     fview.attach_plugin(chain)
+    fview.attach_plugin(TestNonBlocking())
     fview.main()
 
 

@@ -1,3 +1,4 @@
+import time
 import cv2
 
 from microfview import Microfview, PluginChain, DisplayPlugin, BlockingPlugin, get_capture_object
@@ -20,6 +21,10 @@ class ChannelSeparator(BlockingPlugin):
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         return cv2.inRange(frame[:,:,self._channel], self._vmin, self._vmax)
 
+class Slow(BlockingPlugin):
+    def process_frame(self, *args):
+        time.sleep(0.05)
+
 if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.DEBUG)
@@ -27,14 +32,16 @@ if __name__ == "__main__":
     fview = Microfview.new_from_commandline(cap_fallback=get_capture_object("synth:class=dot:bg=graffiti.png"))
 
     blue = PluginChain(ChannelSeparator(0),
-                       DisplayPlugin('blue', show_original_frame=False))
-    fview.attach_plugin(blue)
+                       DisplayPlugin('blue', show_original_frame=False),
+                       Slow())
+    fview.attach_parallel_plugin(blue)
     green = PluginChain(ChannelSeparator(1),
                         DisplayPlugin('green', show_original_frame=False))
-    fview.attach_plugin(green)
+    fview.attach_parallel_plugin(green)
     red = PluginChain(ChannelSeparator(2),
-                      DisplayPlugin('red', show_original_frame=False))
-    fview.attach_plugin(red)
+                      DisplayPlugin('red', show_original_frame=False),
+                      Slow())
+    fview.attach_parallel_plugin(red)
 
     fview.main()
 

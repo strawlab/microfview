@@ -17,7 +17,7 @@ NonBlockingPlugin:
 import threading
 import time
 import logging
-import collections
+import Queue
 
 import cv2
 import numpy as np
@@ -58,9 +58,24 @@ class _Plugin(object):
         self.visible = True
         self.uses_color = False
 
+        self.return_frame = True
+        self.return_state = True
+        self.threaded = False
+
+        self._t0 = self._t1 = np.nan
+
     @property
     def identifier(self):
         return self.__class__.__name__
+
+    def get_execution_time(self):
+        return self._t1 - self._t0
+
+    def tick(self):
+        self._t0 = time.time()
+
+    def tock(self):
+        self._t1 = time.time()
 
     def set_debug(self, d):
         self.debug = d
@@ -98,7 +113,7 @@ class _Plugin(object):
         """override this function."""
         pass
 
-    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, stores):
         raise NotImplementedError
 
     def get_schema(self):
@@ -119,14 +134,16 @@ class FuncWrapperPlugin(_Plugin):
     def __eq__(self, other):
         return isinstance(other, FuncWrapperPlugin) and (self._func == other._func) and (self.every == other.every)
 
-    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, stores):
         return self._func(frame, frame_number, frame_count, frame_time, current_time, state)
 
 
-class PluginChain(_Plugin):
+class PluginChain(_Plugin, threading.Thread):
 
     def __init__(self, *plugins, **kwargs):
-        super(PluginChain, self).__init__(every=kwargs.get('every', 1), logger=kwargs.get('logger', None))
+        _Plugin.__init__(self, every=kwargs.get('every', 1), logger=kwargs.get('logger', None))
+        threading.Thread.__init__(self)
+        self.daemon = True
         if not isinstance(plugins, tuple):
             raise ValueError('plugins must be a tuple')
         self._plugins = list(plugins)
@@ -135,6 +152,14 @@ class PluginChain(_Plugin):
         self._name = kwargs.get('name', '')
         self.shows_windows = any(p.shows_windows for p in self._plugins)
         self.uses_color = any(p.uses_color for p in self._plugins)
+
+        self.return_frame = kwargs.get('return_frame', False)
+        self.return_state = kwargs.get('return_state', True)
+
+        self._arg_queue = Queue.Queue(maxsize=1)
+        self._res_queue = Queue.Queue(maxsize=1)
+        self._res_queue.put(False)
+        self._et = np.nan
 
         if ('return_last_frame' in kwargs) or ('return_last_state' in kwargs):
             raise ValueError("UPDATE YOUR CODE")
@@ -160,117 +185,183 @@ class PluginChain(_Plugin):
 
     def start(self, capture_object):
         map(lambda x: x.start(capture_object), self._plugins)
+        if self.threaded:
+            threading.Thread.start(self)
+            logging.debug('plugin %s started thread' % self.identifier)
 
     def stop(self):
         """compatibility function."""
         map(lambda x: x.stop(), self._plugins)
+        if self.threaded:
+            self._arg_queue.put(None)
+            self.join()
 
-    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
-        ret_state = state or collections.defaultdict(list)
+    def get_execution_time(self):
+        if self.threaded:
+            return self._et
+        else:
+            return self._t1 - self._t0
 
+    def run(self):
+        while True:
+            args = self._arg_queue.get()
+            # thread was quit
+            if args is None:
+                break
+            else:
+                try:
+                    t0 = time.time()
+                    self._res_queue.put(self._call_plugins(*args))
+                    self._et = time.time() - t0
+                except Exception as e:
+                    self._res_queue.put(e)
+                    break
+
+    def _call_plugins(self, frame, frame_number, frame_count, frame_time, current_time, state):
         for p in self._plugins:
-            _ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, ret_state)
+            ret = p.process_frame(frame, frame_number, frame_count, frame_time, current_time, state)
             # if ret is False, the non-blocking plugin was
             # still processing the old frame.
             # if it is None then the plugin didn't return
             # anything useful
             # if is a 2-tuple then it is a frame and a dict
-            if _ret is not None:
-                _ret_state = None
-                if _ret is False:
-                    pass
-                elif isinstance(_ret, tuple):
-                    frame, _ret_state = _ret
-                elif isinstance(_ret, dict):
-                    _ret_state = _ret
-                elif isinstance(_ret, np.ndarray):
-                    frame = _ret
-                if _ret_state is not None:
-                    state_update(ret_state, _ret_state, p.identifier)
+            if ret is not None:
+                ret_state = {}
+                if ret is False:
+                    self.logger.warn("non-blocking plugins in chain not supported")
+                elif isinstance(ret, tuple):
+                    frame, ret_state = ret
+                elif isinstance(ret, dict):
+                    ret_state = ret
+                elif isinstance(ret, np.ndarray):
+                    frame = ret
+                state_update(state, ret_state, p.identifier)
+        return frame, state
 
-        if self._return_last_frame and self._return_last_state:
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, stores):
+        if self.threaded:
+            ret = self._res_queue.get()
+            # re-raise exceptions (such as PluginFinished) back to the main thread
+            if isinstance(ret, Exception):
+                raise ret
+            # fixme: copy state and frame??
+            self._arg_queue.put((frame, frame_number, frame_count, frame_time, current_time, state))
+        else:
+            ret = self._call_plugins(frame, frame_number, frame_count, frame_time, current_time, state)
+
+        ret_state = {}
+        if isinstance(ret, tuple):
+            frame, ret_state = ret
+        elif isinstance(ret, dict):
+            ret_state = ret
+        elif isinstance(ret, np.ndarray):
+            frame = ret
+        if ret_state:
+            for s in stores:
+                s.store(self.identifier, frame, frame_number, frame_count, frame_time, current_time, ret_state)
+
+        if self.return_frame and self.return_state:
             return frame, ret_state
-        elif self._return_last_frame:
+        elif self.return_frame:
             return frame
-        elif self._return_last_state:
+        elif self.return_state:
             return ret_state
         else:
             return None
 
+
 class BlockingPlugin(_Plugin):
 
-    def push_frame(self, *callargs):
-        """compatibility function."""
-        return self.process_frame(*callargs)
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, stores):
+        ret = self.process_frame(frame, frame_number, frame_count, frame_time, current_time, state)
+        if ret is not None:
+            ret_state = {}
+            if isinstance(ret, tuple):
+                frame, ret_state = ret
+            elif isinstance(ret, dict):
+                ret_state = ret
+            elif isinstance(ret, np.ndarray):
+                frame = ret
+            if ret_state:
+                for s in stores:
+                    s.store(self.identifier, frame, frame_number, frame_count, frame_time, current_time, ret_state)
+            return frame, ret_state
+        return None
 
 
 class NonBlockingPlugin(_Plugin, threading.Thread):
 
-    def __init__(self, every=1, max_start_delay_sec=0.001, logger=None):
+    def __init__(self, every=1, logger=None):
         """NonBlockingPlugin.
 
-        Starts a worker thread that listens for incoming frames.
+        Starts a worker thread that listens for incoming frames. If a new
+        frame arrives and the plugin is still processing the old frame, the
+        new plugin is dropped.
 
         Args:
           every (int): process_frame gets called every Nth frame.
-          max_start_delay_sec (float): spins the workerthread on this
-            timescale. Defaults to 0.001 sec.
-
         """
         _Plugin.__init__(self, every, logger)
         threading.Thread.__init__(self)
         self.daemon = True
-        self._frame_available = False
-        self._lock = threading.Lock()
-        self._idle_wait = float(max_start_delay_sec)
-        self._callargs = (None, None, None, None, None, None)
-        self._ret = None
+        self._arg_queue = Queue.Queue(maxsize=1)
+        self._res_queue = Queue.Queue(maxsize=1)
+        self._et = np.nan
+
+        self.threaded = True
+
+    # we manage our own t0 and t1 based on the real time of execution
+    def tick(self): pass
+    def tock(self): pass
+    def get_execution_time(self):
+        return self._et
 
     def start(self, capture_object):
         threading.Thread.start(self)
+        logging.debug('plugin %s started thread' % self.identifier)
 
     def stop(self):
         """stop the worker thread."""
-        with self._lock:
-            self._run = False
-
-    def push_frame(self, *callargs):
+        # block to make sure the thread finishes
+        self._arg_queue.put(None)
+#        self.join()
+    
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, stores):
         """push a frame to the worker queue.
 
-        Returns True if the queue is empty. False if the worker thread is still
-        processing a frame.
-
+        Returns False if the worker thread is still processing the last frame.
         """
-        with self._lock:
-            frame_available = self._frame_available
-        if frame_available:
+        try:
+            self._arg_queue.put_nowait((frame, frame_number, frame_count, frame_time, current_time, state))
+        except Queue.Full:
+            # drop new frames if we are busy
+            pass
+        try:
+            ret_state = {}
+            ret = self._res_queue.get_nowait()
+            if isinstance(ret, tuple):
+                frame, ret_state = ret
+            elif isinstance(ret, dict):
+                ret_state = ret
+            elif isinstance(ret, np.ndarray):
+                frame = ret
+            if ret_state:
+                for s in stores:
+                    s.store(self.identifier, frame, frame_number, frame_count, frame_time, current_time, ret_state)
+            return frame, ret_state
+        except Queue.Empty:
+            # we are still busy
             return False
-        else:
-            self._callargs = callargs
-            with self._lock:
-                self._frame_available = True
-            return self._ret
+            
 
     def run(self):
-        """worker mainloop."""
-        self.logger.info("starting worker")
-        self._run = True
-        while not self.finished:
-            with self._lock:
-                frame_available = self._frame_available
-                # also need to copy the args here
-                if not self._run:
-                    self.logger.info("exiting worker")
-                    break
-            if not frame_available:
-                time.sleep(self._idle_wait)
-                continue
-            try:
-                self._ret = self.process_frame(*self._callargs)
-            except PluginFinished:
-                self.finished = True
-            except:
-                self.logger.exception("error in process_frame")
-            with self._lock:
-                self._frame_available = False
+        while True:
+            args = self._arg_queue.get()
+            #thread was quit
+            if args is None:
+                break
+            else:
+                t0 = time.time()
+                self._res_queue.put(self.process_frame(*args))
+                self._et = time.time() - t0
 

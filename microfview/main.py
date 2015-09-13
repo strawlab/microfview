@@ -141,12 +141,19 @@ class Microfview(threading.Thread):
                 _has_method(plugin, 'stop') and
                 _has_method(plugin, 'push_frame') and
                 hasattr(plugin, 'every')):
-            raise TypeError("plugin does not have the required methods/attributes.")
+            raise TypeError("plugin %r does not have the required methods/attributes." % plugin)
         self._plugins.append(plugin)
         logger.info('attaching plugin %s (shows_windows: %s)' % (plugin.identifier, plugin.shows_windows))
 
+    def attach_parallel_plugin(self, plugin, threaded=False):
+        plugin.return_frame = False
+        plugin.return_state = False
+        plugin.threaded = threaded
+        self.attach_plugin(plugin)
+
     def detach_plugin(self, plugin):
         """Detaches a plugin."""
+        plugin.stop()
         self._plugins.remove(plugin)
 
     def run(self):
@@ -231,9 +238,9 @@ class Microfview(threading.Thread):
                     if self.frame_number_current % plugin.every == 0:
                         cn = plugin.identifier
                         try:
-                            t0 = time.time()
-                            ret = plugin.push_frame(buf, frame_number, self.frame_count, frame_timestamp, now, state)
-                            t1 = time.time()
+                            plugin.tick()
+                            ret = plugin.push_frame(buf, frame_number, self.frame_count, frame_timestamp, now, state, self._framestores)
+                            plugin.tock()
 
                             dbg_s = [cn]
 
@@ -243,33 +250,28 @@ class Microfview(threading.Thread):
                             # anything useful
                             # if is a 2-tuple then it is a frame and a dict
                             if ret is not None:
-                                ret_state = None
+                                ret_state = {}
                                 if ret is False:
                                     dbg_s.append('BUSY')
                                 elif isinstance(ret, tuple):
                                     buf, ret_state = ret
-                                    dbg_s.append('returned img and state')
+                                    dbg_s.append('returned img %r and state' % (buf.shape,))
                                 elif isinstance(ret, dict):
                                     ret_state = ret
                                     dbg_s.append('returned state')
                                 elif isinstance(ret, np.ndarray):
                                     buf = ret
-                                    dbg_s.append('returned image')
+                                    dbg_s.append('returned image %r' % (buf.shape,))
 
-                                if ret_state is not None:
-                                    state_update(state, ret_state, cn)
-                                    dbg_s.append('current state\n\t%s' % state.keys())
+                                state_update(state, ret_state, cn)
+                                dbg_s.append('current state\n\t%s' % state.keys())
 
-                                if ret_state:
-                                    # save to frame store
-                                    for s in self._framestores:
-                                        s.store(cn, buf, frame_number, self.frame_count, frame_timestamp, now, ret_state)
                             else:
                                 dbg_s.append('returned None')
 
                             # print ' '.join(dbg_s)
 
-                            execution_times[cn] = t1 - t0
+                            execution_times[cn] = plugin.get_execution_time()
 
                         except PluginFinished:
                             logger.info("%s finished" % cn)

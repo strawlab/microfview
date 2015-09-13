@@ -53,5 +53,5 @@ def parse_config_file(filename):
 def print_mean_fps(execution_times, accum):
     print 'PLUGIN FPS'
     for et in execution_times:
-        print "    %s %.0f" % (et, 1.0/np.mean(accum[et]))
+        print "    %s %.0f" % (et, 1.0/np.nanmean(accum[et]))
     print ''
