@@ -31,7 +31,6 @@ class _SynthBase(object):
             self._bg = cv2.resize(self._bg, self.frame_size)
 
         self._noise = float(noise)
-        self._t0 = time.time()
 
     def get_last_frame_metadata(self):
         return {}
@@ -42,14 +41,7 @@ class _SynthBase(object):
 
     def read(self, frame_count):
         if self.fps > 0.0:
-            t1 = time.time()
-            dt = t1 - self._t0
-            self._t0 = t1
-            #sleep the difference between the desired fps and our current fps
-            #actually sleep a little less than the differnce because of jitter
-            ddt = (1/self.fps) - dt
-            if ddt > 0:
-                time.sleep(0.5*ddt)
+            t0 = time.time()
 
         w, h = self.frame_size
 
@@ -64,6 +56,16 @@ class _SynthBase(object):
             noise = np.zeros((h, w, 3), np.int8)
             cv2.randn(noise, np.zeros(3), np.ones(3)*255*self._noise)
             buf = cv2.add(buf, noise, dtype=cv2.CV_8UC3)
+
+        if self.fps > 0.0:
+            t1 = time.time()
+            #sleep the difference between the desired fps and our current fps
+            #actually sleep a little less than the differnce because of jitter
+            ddt = (1/self.fps) - (t1 - t0)
+            if ddt > 0:
+                time.sleep(ddt)
+
+
         return True, buf
 
 
