@@ -184,7 +184,9 @@ class Microfview(threading.Thread):
         self._run = True
         try:
 
-            execution_times = collections.OrderedDict({p.identifier:time.time() for p in self._plugins})
+            execution_times = collections.OrderedDict({'Acquire':time.time()})
+            for p in self._plugins:
+                execution_times[p.identifier] = time.time()
             execution_times['TOTAL'] = time.time()
 
             capture_is_color = None
@@ -195,6 +197,7 @@ class Microfview(threading.Thread):
                 # grab frame
                 try:
                     frame = self.frame_capture.grab_next_frame()
+                    execution_times['Acquire'] = time.time() - now0
                 except EOFError as e:
                     logger.info(e.message)
                     self.stop()
