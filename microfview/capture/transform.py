@@ -22,6 +22,7 @@ class ImageTransform(object):
             if len(roi) > 1:
                 raise ValueError('only one ROI for transform is supported')
             roi = roi[0]
+            # roi is ((x0,y0), (x1,y1))
             self._roi = slice(roi[0][0],roi[1][0]), slice(roi[0][1],roi[1][1])
         else:
             self._roi = None
