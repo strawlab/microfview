@@ -22,7 +22,6 @@ import Queue
 import cv2
 import numpy as np
 
-from .store import state_update
 
 class PluginFinished(Exception):
     pass
@@ -214,6 +213,7 @@ class PluginChain(_Plugin, threading.Thread):
                     self._res_queue.put(self._call_plugins(*args))
                     self._et = time.time() - t0
                 except Exception as e:
+                    self.logger.warn(e.message, exc_info=True)
                     self._res_queue.put(e)
                     break
 
@@ -235,7 +235,7 @@ class PluginChain(_Plugin, threading.Thread):
                     ret_state = ret
                 elif isinstance(ret, np.ndarray):
                     frame = ret
-                state_update(state, ret_state, p.identifier)
+                state.update(ret_state)
         return frame, state
 
     def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, stores):

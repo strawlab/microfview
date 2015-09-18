@@ -16,7 +16,6 @@ import logging
 logger = logging.getLogger('microfview')
 
 from .plugin import PluginFinished, FuncWrapperPlugin
-from .store import state_update
 from .plugins.display import DisplayPlugin
 
 # helper function for frame_capture checks
@@ -219,7 +218,7 @@ class Microfview(threading.Thread):
                 else:
                     buf = frame
 
-                state = collections.defaultdict(list)
+                state = {}
                 state['FRAME_ORIGINAL'] = frame
                 state['FRAME_METADATA'] = self.frame_capture.get_last_metadata()
                 state['KEY'] = None
@@ -266,7 +265,7 @@ class Microfview(threading.Thread):
                                     buf = ret
                                     dbg_s.append('returned image %r' % (buf.shape,))
 
-                                state_update(state, ret_state, cn)
+                                state.update(ret_state)
                                 dbg_s.append('current state\n\t%s' % state.keys())
 
                             else:

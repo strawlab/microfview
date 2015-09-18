@@ -45,6 +45,9 @@ class DisplayPlugin(BlockingPlugin):
         if self.visible:
             img = frame if not self._show_original_frame else state['FRAME_ORIGINAL']
             for key in SPECIAL_STATE_KEYS:
-                for obj in state[key]:
+                try:
+                    obj = state[key]
                     self._draw_state(img, obj)
+                except KeyError:
+                    pass
             cv2.imshow(self._window_name, img)

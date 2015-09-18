@@ -7,20 +7,6 @@ CONTOUR           = "UFVIEW_contour"
 SPECIAL_STATE_KEYS = {DETECTED_OBJECT, TRACKED_OBJECT, CONTOUR}
 
 
-def state_update(old, new, nick):
-    for k in new:
-        if k in SPECIAL_STATE_KEYS:
-            _new = new[k]
-            if isinstance(_new, list) and len(_new):
-                for __new in _new:
-                    if __new not in old[k]:
-                        old[k].append(__new)
-            else:
-                old[k].append(_new)
-        else:
-            old[k] = new[k]
-
-
 class DetectedObjectType:
     def __init__(self, id, x, y):
         self.id = int(id)
