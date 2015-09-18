@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 from ..plugin import BlockingPlugin
-from ..store import SPECIAL_STATE_KEYS, TrackedObjectType, DetectedObjectType, ContourType
+from ..store import SPECIAL_STATE_KEYS, TrackedObjectType, DetectedObjectType, ContourType, UNIT_PIXELS
 
 class DisplayPlugin(BlockingPlugin):
 
@@ -37,7 +37,8 @@ class DisplayPlugin(BlockingPlugin):
             cv2.drawContours(frame, [val.pts], 0, (0,0,255), 1)
         elif isinstance(val, (TrackedObjectType, DetectedObjectType)):
             # objects in green
-            cv2.circle(frame, (int(val.x),int(val.y)),3,(0,255,0),2)
+            if getattr(val, "unit", UNIT_PIXELS) == UNIT_PIXELS:
+                cv2.circle(frame, (int(val.x),int(val.y)),3,(0,255,0),2)
 
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         if self.visible:

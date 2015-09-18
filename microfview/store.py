@@ -1,11 +1,15 @@
+import numpy as np
 import collections
 
 DETECTED_OBJECT   = "UFVIEW_object"
 TRACKED_OBJECT    = "UFVIEW_tracked_object"
+TRACKED_3D_OBJECT = "UFVIEW_tracked_3d_object"
 CONTOUR           = "UFVIEW_contour"
 
-SPECIAL_STATE_KEYS = {DETECTED_OBJECT, TRACKED_OBJECT, CONTOUR}
+SPECIAL_STATE_KEYS = {DETECTED_OBJECT, TRACKED_OBJECT, TRACKED_3D_OBJECT, CONTOUR}
 
+UNIT_METERS = "m"
+UNIT_PIXELS = "px"
 
 class DetectedObjectType:
     def __init__(self, id, x, y):
@@ -37,6 +41,18 @@ class TrackedObjectType:
 
     def __repr__(self):
         return "TrackedObject(id=%d, x=%s, y=%s, err=%s)" % (self.id, self.x, self.y, self.err)
+
+
+class Tracked3DObjectType:
+    def __init__(self, id, x, y, z, err):
+        self.id = int(id)
+        self.x = x
+        self.y = y
+        self.z = z
+        self.err = err
+
+    def __repr__(self):
+        return "Tracked3DObject(id=%d, x=%s, y=%s, z=%s err=%s)" % (self.id, self.x, self.y, self.z, self.err)
 
 
 class FrameStore(object):
