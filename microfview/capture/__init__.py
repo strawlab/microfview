@@ -23,8 +23,8 @@ def get_capture_object(desc, cap_fallback=None, options_dict=None):
     except KeyError:
         use_opencv = True
 
-    if (not desc) and (cap_fallback is not None):
-        logging.info('Using provided capture object: %r' % cap)
+    if (not capture_options) and (not desc) and (cap_fallback is not None):
+        logging.info('Using provided capture object: %r' % cap_fallback)
         cap = cap_fallback
     elif desc.startswith('synth:'):
         from .synth import SynthCapture
