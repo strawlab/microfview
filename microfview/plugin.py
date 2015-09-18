@@ -36,7 +36,8 @@ class _Plugin(object):
         finished (bool) : true if this plugin should quit
         shows_windows (bool) : true if this plugin shows an cv2 window
         uses_color (bool) : true if this plugin uses color information
-        identifier (string) : human readable name of this plugin
+        human_name (string) : human readable name of this plugin
+        uid (string) : code identifying this plugin in the main application hierarchy
     """
 
     def __init__(self, every=1, logger=None):
@@ -56,16 +57,24 @@ class _Plugin(object):
         self.debug = False
         self.visible = True
         self.uses_color = False
+        self.human_name = self.__class__.__name__
 
         self.return_frame = True
         self.return_state = True
         self.threaded = False
 
         self._t0 = self._t1 = np.nan
+        self._uid = "UNKNOWN"
 
     @property
     def identifier(self):
-        return self.__class__.__name__
+        return "%s:%s" % (self._uid, self.human_name)
+
+    def set_uid(self, uid):
+        self._uid = uid
+
+    def get_uid(self):
+        return self._uid
 
     def get_execution_time(self):
         return self._t1 - self._t0
@@ -82,8 +91,14 @@ class _Plugin(object):
     def set_visible(self, v):
         self.visible = v
 
+    def debug_window_name(self, name):
+        if self._uid == "UNKNOWN":
+            self.logger.critical("construct windows in start() as they need uids")
+        return "%s:%s" % (self._uid, name)
+
     def debug_window_create(self, name, size, resizable=True):
         if self.debug:
+            name = self.debug_window_name(name)
             if resizable:
                 cv2.namedWindow(name, getattr(cv2,'WINDOW_NORMAL',0))
                 if (size[0] > 0) and (not np.isnan(size[0])):
@@ -91,13 +106,16 @@ class _Plugin(object):
                     cv2.resizeWindow(name, *map(int, size))
             else:
                 cv2.namedWindow(name, getattr(cv2, 'WINDOW_AUTOSIZE', 1))
+            return name
 
     def debug_window_show(self, name, img):
         if self.debug and (img is not None):
+            name = self.debug_window_name(name)
             cv2.imshow(name, img)
 
     def debug_window_destroy(self, name):
         if self.debug:
+            name = self.debug_window_name(name)
             cv2.destroyWindow(name)
 
     def start(self, capture_object):
@@ -124,11 +142,7 @@ class FuncWrapperPlugin(_Plugin):
     def __init__(self, func, name, every=1):
         super(FuncWrapperPlugin, self).__init__(every=every)
         self._func = func
-        self._name = name
-
-    @property
-    def identifier(self):
-        return self._name
+        self.human_name = name
 
     def __eq__(self, other):
         return isinstance(other, FuncWrapperPlugin) and (self._func == other._func) and (self.every == other.every)
@@ -143,18 +157,17 @@ class PluginChain(_Plugin, threading.Thread):
         _Plugin.__init__(self, every=kwargs.get('every', 1), logger=kwargs.get('logger', None))
         threading.Thread.__init__(self)
         self.daemon = True
+
         if not isinstance(plugins, tuple):
             raise ValueError('plugins must be a tuple')
-        self._plugins = list(plugins)
-        self._return_last_frame = False
-        self._return_last_state = True
-        self._name = kwargs.get('name', '')
-        self.shows_windows = any(p.shows_windows for p in self._plugins)
-        self.uses_color = any(p.uses_color for p in self._plugins)
 
+        self.human_name = "%s(%s)" % (self.__class__.__name__, kwargs.get('name', ''))
+        self.shows_windows = any(p.shows_windows for p in plugins)
+        self.uses_color = any(p.uses_color for p in plugins)
         self.return_frame = kwargs.get('return_frame', False)
         self.return_state = kwargs.get('return_state', True)
 
+        self._plugins = list(plugins)
         self._arg_queue = Queue.Queue(maxsize=1)
         self._res_queue = Queue.Queue(maxsize=1)
         self._res_queue.put(False)
@@ -163,12 +176,10 @@ class PluginChain(_Plugin, threading.Thread):
         if ('return_last_frame' in kwargs) or ('return_last_state' in kwargs):
             raise ValueError("UPDATE YOUR CODE")
 
-    @property
-    def identifier(self):
-        if self._name:
-            return self._name
-        else:
-            return '->'.join(p.identifier for p in self._plugins)
+    def set_uid(self, v):
+        self._uid = v
+        for i, plugin in enumerate(self._plugins):
+            plugin.set_uid("%s.%s" % (self._uid, i))
 
     def get_schema(self):
         schema = {}

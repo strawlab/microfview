@@ -142,7 +142,7 @@ class Microfview(threading.Thread):
                 hasattr(plugin, 'every')):
             raise TypeError("plugin %r does not have the required methods/attributes." % plugin)
         self._plugins.append(plugin)
-        logger.info('attaching plugin %s (shows_windows: %s)' % (plugin.identifier, plugin.shows_windows))
+        logger.info('attaching plugin %s (shows_windows: %s)' % (plugin.human_name, plugin.shows_windows))
 
     def attach_parallel_plugin(self, plugin, threaded=False):
         plugin.return_frame = False
@@ -163,7 +163,9 @@ class Microfview(threading.Thread):
 
         # start all plugins
         schema = {}
-        for plugin in self._plugins:
+        for i,plugin in enumerate(self._plugins):
+            plugin.set_uid(str(i))
+
             plugin.set_debug(self._debug)
             plugin.set_visible(self._visible)
             plugin.start(self.frame_capture)

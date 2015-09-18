@@ -9,15 +9,13 @@ class DisplayPlugin(BlockingPlugin):
     def __init__(self, window_name, show_original_frame=False, every=1):
         super(DisplayPlugin, self).__init__(every=every)
         self.shows_windows = True
-
-        self._window_name = window_name
+        self.human_name = "%s(%s)" % (self.__class__.__name__, window_name)
         self._show_original_frame = show_original_frame
-
-    @property
-    def identifier(self):
-        return self.__class__.__name__ + ":" + self._window_name
+        self.__window_name = window_name
 
     def start(self, capture_object):
+        # wait until here to get the window name because it depends on the uid
+        self._window_name = self.debug_window_name(self.__window_name)
         if self.visible:
             # create a resizable window but limit its size to less than the screen size
             cv2.namedWindow(self._window_name, getattr(cv2,'WINDOW_NORMAL',0))

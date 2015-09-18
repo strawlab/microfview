@@ -15,14 +15,12 @@ class MyPlugin(BlockingPlugin):
 
     def __init__(self, k, vfunc, n):
         super(MyPlugin, self).__init__(logger=logging.getLogger('example.%s' % k))
+        self.human_name = "%s(%s)" % (self.__class__.__name__, + k)
         self._k = k
         self._vfunc = vfunc
         self._n = n
         self._i = 0
 
-    @property
-    def identifier(self):
-        return self.__class__.__name__ + ':' + self._k
 
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         time.sleep(0.1)

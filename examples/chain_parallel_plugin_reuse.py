@@ -13,10 +13,7 @@ class ChannelSeparator(BlockingPlugin):
         self._vmax = vmax
 
         self.uses_color = True
-
-    @property
-    def identifier(self):
-        return "%s:%s" % (self.__class__.__name__,self._channel)
+        self.human_name = "%s(channel=%s)" % (self.__class__.__name__, self._channel)
 
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         return cv2.inRange(frame[:,:,self._channel], self._vmin, self._vmax)
