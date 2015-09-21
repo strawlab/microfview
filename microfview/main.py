@@ -191,6 +191,7 @@ class Microfview(threading.Thread):
             execution_times['TOTAL'] = time.time()
 
             capture_is_color = None
+            last_key = 0xFF
 
             while self._run:
                 now0 = time.time()
@@ -223,7 +224,7 @@ class Microfview(threading.Thread):
                 state = {}
                 state['FRAME_ORIGINAL'] = frame
                 state['FRAME_METADATA'] = self.frame_capture.get_last_metadata()
-                state['KEY'] = None
+                state['KEY'] = last_key
 
                 frame_timestamp = self.frame_capture.get_last_timestamp()
                 frame_number = self.frame_capture.get_last_framenumber()
@@ -306,7 +307,7 @@ class Microfview(threading.Thread):
                         break
 
                 if call_cvwaitkey:
-                    state['KEY'] = 0xFF & cv2.waitKey(self._waitkey_delay)
+                    last_key = 0xFF & cv2.waitKey(self._waitkey_delay)
                 elif self._waitkey_delay == 0:
                     raw_input('Press key to continue')
 
