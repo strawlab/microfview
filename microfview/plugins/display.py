@@ -1,8 +1,15 @@
 import cv2
 import numpy as np
 
+try:
+    from skimage.draw import set_color
+except ImportError:
+    set_color = None
+
 from ..plugin import BlockingPlugin
-from ..store import SPECIAL_STATE_KEYS, TrackedObjectType, DetectedObjectType, ContourType, UNIT_PIXELS
+from ..store import SPECIAL_STATE_KEYS, TrackedObjectType, DetectedObjectType, ContourType, UNIT_PIXELS, PointArrayType
+from ..util import is_color
+
 
 class DisplayPlugin(BlockingPlugin):
 
@@ -12,6 +19,9 @@ class DisplayPlugin(BlockingPlugin):
         self.human_name = "%s(%s)" % (self.__class__.__name__, window_name)
         self._show_original_frame = show_original_frame
         self.__window_name = window_name
+
+        if set_color is None:
+            self.logger.warn('displaying point arrays disabled due to missing scikit-image')
 
     def start(self, capture_object):
         # wait until here to get the window name because it depends on the uid
@@ -39,6 +49,14 @@ class DisplayPlugin(BlockingPlugin):
             # objects in green
             if getattr(val, "unit", UNIT_PIXELS) == UNIT_PIXELS:
                 cv2.circle(frame, (int(val.x),int(val.y)),3,(0,255,0),2)
+        elif isinstance(val, PointArrayType):
+            if set_color is not None:
+                r,c = val.y, val.x
+                if is_color(frame):
+                    # draw in yellow
+                    set_color(frame, (r,c), (0,255,255))
+                else:
+                    set_color(frame, (r,c), 255)
 
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         if self.visible:
