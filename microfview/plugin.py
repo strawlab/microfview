@@ -97,9 +97,16 @@ class _Plugin(object):
         return "%s:%s" % (self._uid, name)
 
     def debug_window_create(self, name, size, resizable=True):
+        """
+        creates a debug window that may be used to show debug images later
+
+        :param name: name of window
+        :param size: size of window (if known, or None if not known)
+        :param resizable: whether the window should be resizable if possible
+        """
         if self.debug:
             name = self.debug_window_name(name)
-            if resizable:
+            if resizable and (size is not None):
                 cv2.namedWindow(name, getattr(cv2,'WINDOW_NORMAL',0))
                 if (size[0] > 0) and (not np.isnan(size[0])):
                     # some videos don't know their size...
