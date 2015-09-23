@@ -8,6 +8,10 @@ import yaml
 import numpy as np
 
 
+def is_color(img):
+    return (img.shape[-1] == 3) & (img.ndim == 3)
+
+
 def get_logger():
     """returns the global microfview logging.Logger instance"""
     # setup logging
