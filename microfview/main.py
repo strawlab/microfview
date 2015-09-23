@@ -260,16 +260,16 @@ class Microfview(threading.Thread):
                                     dbg_s.append('BUSY')
                                 elif isinstance(ret, tuple):
                                     buf, ret_state = ret
-                                    dbg_s.append('returned img %r and state' % (buf.shape,))
+                                    dbg_s.append('returned img %r and state %r' % (buf.shape,ret_state.keys()))
                                 elif isinstance(ret, dict):
                                     ret_state = ret
-                                    dbg_s.append('returned state')
+                                    dbg_s.append('returned state %r' % (ret_state.keys(),))
                                 elif isinstance(ret, np.ndarray):
                                     buf = ret
                                     dbg_s.append('returned image %r' % (buf.shape,))
 
                                 state.update(ret_state)
-                                dbg_s.append('current state\n\t%s' % state.keys())
+                                dbg_s.append('\n\tcurrent merged state:\n\t%s' % state.keys())
 
                             else:
                                 dbg_s.append('returned None')
