@@ -31,7 +31,7 @@ def get_test_instance(fps=0, nframes=100, display=False, cam=None, synthdesc='')
     display = int(os.environ.get('UFVIEW_TEST_DISPLAY', display))
     if cam is None:
         cam = get_capture_object("synth:class=dot:fps=%d:nframes=%d:%s" % (fps, nframes, synthdesc))
-    fview = Microfview(cam, visible=bool(display), debug=False)
+    fview = Microfview(cam, visible=bool(display), debug=False, stop_frame=nframes)
     s = StateFrameStore()
     fview.attach_framestore(s)
     if display:
