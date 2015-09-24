@@ -118,7 +118,7 @@ class _Plugin(object):
     def debug_window_show(self, name, img):
         if self.debug and (img is not None):
             # handle boolean arrays
-            if np.issubdtype(img.dtype, np.bool):
+            if np.issubdtype(img.dtype, np.bool_):
                 img = img.astype(np.uint8) * 255
             name = self.debug_window_name(name)
             cv2.imshow(name, img)
