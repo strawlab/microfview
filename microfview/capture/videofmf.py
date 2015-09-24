@@ -14,7 +14,7 @@ class FMFCapture(CaptureBase):
 
     supports_seeking = True
 
-    def __init__(self, filename, check_integrity=False, force_framerate=20):
+    def __init__(self, filename, check_integrity=False, force_framerate=0):
         """class for interfacing fmf videos.
 
         Args:
@@ -31,7 +31,10 @@ class FMFCapture(CaptureBase):
 
         self._frame_timestamp = 0.0
         self._frame_number = -1
-        self._frame_delay = 1./float(force_framerate)
+        if force_framerate > 0:
+            self._frame_delay = 1./float(force_framerate)
+        else:
+            self._frame_delay = None
 
         #CaptureBase attributes
         self.frame_count = self._mov.n_frames
@@ -52,7 +55,8 @@ class FMFCapture(CaptureBase):
                 raise EOFError
         self._frame_timestamp = timestamp
         self._frame_number += 1
-        time.sleep(self._frame_delay)
+        if self._frame_delay is not None:
+            time.sleep(self._frame_delay)
         return frame
 
     def get_last_timestamp(self):
