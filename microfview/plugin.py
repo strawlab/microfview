@@ -265,8 +265,9 @@ class PluginChain(_Plugin, threading.Thread):
             # re-raise exceptions (such as PluginFinished) back to the main thread
             if isinstance(ret, Exception):
                 raise ret
-            # fixme: copy state and frame??
-            self._arg_queue.put((frame, frame_number, frame_count, frame_time, current_time, state))
+            # fixme: copying the frame and blanking the state seems heavy handed. I really need to
+            # fixme: replace this state object with something smarter - a lockable or freezable dict maybe?
+            self._arg_queue.put((frame.copy(), frame_number, frame_count, frame_time, current_time, {'KEY':None}))
         else:
             ret = self._call_plugins(frame, frame_number, frame_count, frame_time, current_time, state)
 
@@ -353,7 +354,9 @@ class NonBlockingPlugin(_Plugin, threading.Thread):
         Returns False if the worker thread is still processing the last frame.
         """
         try:
-            self._arg_queue.put_nowait((frame, frame_number, frame_count, frame_time, current_time, state))
+            # fixme: copying the frame and blanking the state seems heavy handed. I really need to
+            # fixme: replace this state object with something smarter - a lockable or freezable dict maybe?
+            self._arg_queue.put_nowait((frame.copy(), frame_number, frame_count, frame_time, current_time, {'KEY':None}))
         except Queue.Full:
             # drop new frames if we are busy
             pass
