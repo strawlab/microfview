@@ -116,7 +116,7 @@ class _Plugin(object):
             return name
 
     def debug_window_show(self, name, img):
-        if self.debug and (img is not None):
+        if self.debug and (img is not None) and img.shape[0] and img.shape[1]:
             # handle boolean arrays
             if np.issubdtype(img.dtype, np.bool_):
                 img = img.astype(np.uint8) * 255
