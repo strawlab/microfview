@@ -30,7 +30,10 @@ def get_capture_object(desc, cap_fallback=None, options_dict=None):
         from .synth import SynthCapture
         cap = SynthCapture(desc)
     elif os.path.isfile(desc):
-        if desc.endswith('.fmf'):
+        if desc.endswith('.png') or desc.endswith('.jpg'):
+            from .synth import SynthCapture
+            cap = SynthCapture('synth:bg=%s:fps=50' % os.path.abspath(desc))
+        elif desc.endswith('.fmf'):
             logging.info('Opening FMF file using motmot')
             from .videofmf import FMFCapture
             cap = FMFCapture(desc, **capture_options)
