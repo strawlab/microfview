@@ -46,11 +46,12 @@ def run_test_instance_and_plugins(*plugins, **kwargs):
     return framestore.state
 
 
-def get_test_frame(frame_type='grascaley', cam=None):
+def get_test_frame(frame_type='grascaley', cam=None, synthdesc=None):
     assert frame_type in ('binary','grayscale','color')
 
     if cam is None:
-        synthdesc = "synth:class=dot:fps=0:nframes=1:initial_x=200:initial_y=300"
+        if synthdesc is None:
+            synthdesc = "synth:class=dot:fps=0:nframes=1:initial_x=200:initial_y=300"
         if frame_type == 'binary':
             synthdesc += ":fill_bgr=255,255,255"
         else:
