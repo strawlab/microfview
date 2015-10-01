@@ -40,16 +40,22 @@ class DisplayPlugin(BlockingPlugin):
         if self.visible:
             cv2.destroyWindow(self._window_name)
 
-    def _draw_state(self, frame, val):
+    def _draw_state(self, frame, val, M):
         if isinstance(val, ContourType):
+            if M is not None:
+                val = val.transform(M)
             # contours are drawn in red
-            cv2.circle(frame, (int(val.x),int(val.y)),2,(0,0,255),1)
-            cv2.drawContours(frame, [val.pts], 0, (0,0,255), 1)
+            cv2.circle(frame, (int(val.x),int(val.y)),2,(255,0,255),1)
+            cv2.drawContours(frame, [val.pts], 0, (255,0,255), 1)
         elif isinstance(val, (TrackedObjectType, DetectedObjectType)):
+            if M is not None:
+                val = val.transform(M)
             # objects in green
             if getattr(val, "unit", UNIT_PIXELS) == UNIT_PIXELS:
                 cv2.circle(frame, (int(val.x),int(val.y)),3,(0,255,0),2)
         elif isinstance(val, PointArrayType):
+            if M is not None:
+                val = val.transform(M)
             if set_color is not None:
                 r,c = val.y, val.x
                 if is_color(frame):
@@ -61,10 +67,14 @@ class DisplayPlugin(BlockingPlugin):
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         if self.visible:
             img = frame if not self._show_original_frame else state['FRAME_ORIGINAL']
+            if self._show_original_frame and ('FRAME_TRANSFORM' in state):
+                M = state['FRAME_TRANSFORM']
+            else:
+                M = None
             for key in SPECIAL_STATE_KEYS:
                 try:
                     obj = state[key]
-                    self._draw_state(img, obj)
+                    self._draw_state(img, obj, M)
                 except KeyError:
                     pass
             cv2.imshow(self._window_name, img)
