@@ -7,11 +7,11 @@ except ImportError:
     set_color = None
 
 from ..plugin import BlockingPlugin
-from ..store import SPECIAL_STATE_KEYS, TrackedObjectType, DetectedObjectType, ContourType, UNIT_PIXELS, PointArrayType
+from ..store import FrameStore, SPECIAL_STATE_KEYS, TrackedObjectType, DetectedObjectType, ContourType, UNIT_PIXELS, PointArrayType
 from ..util import is_color
 
 
-class DisplayPlugin(BlockingPlugin):
+class DisplayPlugin(BlockingPlugin, FrameStore):
 
     def __init__(self, window_name, show_original_frame=False, every=1):
         super(DisplayPlugin, self).__init__(every=every)
@@ -19,6 +19,9 @@ class DisplayPlugin(BlockingPlugin):
         self.human_name = "%s(%s)" % (self.__class__.__name__, window_name)
         self._show_original_frame = show_original_frame
         self.__window_name = window_name
+
+        # in main operation we are called via the framestore interface
+        self.__last_img = None
 
         if set_color is None:
             self.logger.warn('displaying point arrays disabled due to missing scikit-image')
@@ -78,3 +81,21 @@ class DisplayPlugin(BlockingPlugin):
                 except KeyError:
                     pass
             cv2.imshow(self._window_name, img)
+
+    def store_state(self, callback_name, buf, frame_number, frame_count, frame_timestamp, now, state):
+        if self.visible:
+            M = state.get('FRAME_TRANSFORM', None)
+            for key in SPECIAL_STATE_KEYS:
+                try:
+                    obj = state[key]
+                    self._draw_state(self.__last_img, obj, M)
+                except KeyError:
+                    pass
+
+    def store_begin_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
+        if self.visible:
+            self.__last_img = buf
+
+    def store_end_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
+        if self.visible:
+            cv2.imshow(self._window_name, self.__last_img)

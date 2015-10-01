@@ -17,6 +17,7 @@ logger = logging.getLogger('microfview')
 
 from .plugin import PluginFinished, FuncWrapperPlugin
 from .plugins.display import DisplayPlugin
+from .store import FrameStoreManager
 
 # helper function for frame_capture checks
 def _has_method(obj, method):
@@ -60,7 +61,7 @@ class Microfview(threading.Thread):
 
         self._profile_timestore = None
         self._profile = None
-        self._framestores = []
+        self._framestore = FrameStoreManager()
 
         self._display_plugins = []
 
@@ -108,7 +109,7 @@ class Microfview(threading.Thread):
     def attach_framestore(self, obj):
         """Attaches a FrameStore instance that will be called after every
         frame to save any relevant data for that frame"""
-        self._framestores.append(obj)
+        self._framestore.add(obj)
 
     def attach_callback(self, callback_func, every=1):
         """Attaches a callback function, which is called on every Nth frame.
@@ -157,13 +158,9 @@ class Microfview(threading.Thread):
 
     def run(self):
         """main loop. do not call directly."""
-        # display plugins are just normal plugins. Adding them here ensures they are
-        # called last
-        map(self.attach_plugin, self._display_plugins)
-
         # start all plugins
         schema = {}
-        for i,plugin in enumerate(self._plugins):
+        for i,plugin in enumerate(self._plugins + self._display_plugins):
             plugin.set_uid(str(i))
 
             plugin.set_debug(self._debug)
@@ -173,8 +170,10 @@ class Microfview(threading.Thread):
             schema[plugin.identifier] = plugin.get_schema()
 
         # initialize all frame stores
-        for s in self._framestores:
-            s.open(schema)
+        # display plugins are called via the framestore interface so they can draw transformed state
+        for d in self._display_plugins:
+            self._framestore.add(d)
+        self._framestore.open(schema)
 
         call_cvwaitkey = any(p.shows_windows for p in self._plugins)
         logger.info('will call waitkey: %s' % call_cvwaitkey)
@@ -239,15 +238,18 @@ class Microfview(threading.Thread):
 
                 finished_plugins = []
                 now = time.time()
+
+                self._framestore.begin_frame(frame, frame_number, self.frame_count, frame_timestamp, now)
+
                 for plugin in self._plugins:
                     if self.frame_number_current % plugin.every == 0:
                         cn = plugin.identifier
                         try:
                             plugin.tick()
-                            ret = plugin.push_frame(buf, frame_number, self.frame_count, frame_timestamp, now, state, self._framestores)
+                            ret = plugin.push_frame(buf, frame_number, self.frame_count, frame_timestamp, now, state, self._framestore)
                             plugin.tock()
 
-                            dbg_s = [cn]
+                            dbg_s = ["%s (threaded: %s)" % (cn, plugin.threaded)]
 
                             # if ret is False, the non-blocking plugin was
                             # still processing the old frame.
@@ -311,14 +313,14 @@ class Microfview(threading.Thread):
                 elif self._waitkey_delay == 0:
                     raw_input('Press key to continue')
 
+                self._framestore.end_frame(frame, frame_number, self.frame_count, frame_timestamp, now)
 
 
         finally:
             # stop the plugins
             for plugin in self._plugins:
                 plugin.stop()
-            for s in self._framestores:
-                s.close()
+            self._framestore.close()
 
         self.finished = True
 

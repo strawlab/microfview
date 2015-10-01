@@ -11,7 +11,7 @@ class StateFrameStore(FrameStore):
     def __init__(self):
         self.state = []
 
-    def store(self, callback_name, buf, frame_number, frame_count, frame_timestamp, now, state):
+    def store_state(self, callback_name, buf, frame_number, frame_count, frame_timestamp, now, state):
         # storing the original image wastes memory for tests
         try: state.pop('FRAME_ORIGINAL')
         except KeyError: pass

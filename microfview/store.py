@@ -1,3 +1,5 @@
+import threading
+
 import numpy as np
 
 DETECTED_OBJECT   = "UFVIEW_object"
@@ -102,11 +104,48 @@ class PointArrayType(_Transformable):
 
 class FrameStore(object):
 
-    def open(self, schema_dict):
+    def store_open(self, schema_dict):
         pass
 
-    def store(self, callback_name, buf, frame_number, frame_count, frame_timestamp, now, state):
+    def store_state(self, callback_name, buf, frame_number, frame_count, frame_timestamp, now, state):
         raise NotImplementedError
 
-    def close(self):
+    def store_close(self):
         pass
+
+    def store_begin_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
+        pass
+
+    def store_end_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
+        pass
+
+
+class FrameStoreManager(object):
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._framestores = []
+
+    def add(self, framestore):
+        self._framestores.append(framestore)
+
+    def open(self, schema):
+        for s in self._framestores:
+            s.store_open(schema)
+
+    def close(self):
+        for s in self._framestores:
+            s.store_close()
+
+    def store(self, callback_name, buf, frame_number, frame_count, frame_timestamp, now, state):
+        with self._lock:
+            for s in self._framestores:
+                s.store_state(callback_name, buf, frame_number, frame_count, frame_timestamp, now, state)
+
+    def begin_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
+        for s in self._framestores:
+            s.store_begin_frame(buf, frame_number, frame_count, frame_timestamp, now)
+
+    def end_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
+        for s in self._framestores:
+            s.store_end_frame(buf, frame_number, frame_count, frame_timestamp, now)

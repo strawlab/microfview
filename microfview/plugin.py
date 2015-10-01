@@ -140,7 +140,7 @@ class _Plugin(object):
         """override this function."""
         pass
 
-    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, stores):
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, storem):
         raise NotImplementedError
 
     def get_schema(self):
@@ -157,7 +157,7 @@ class FuncWrapperPlugin(_Plugin):
     def __eq__(self, other):
         return isinstance(other, FuncWrapperPlugin) and (self._func == other._func) and (self.every == other.every)
 
-    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, stores):
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, storem):
         return self._func(frame, frame_number, frame_count, frame_time, current_time, state)
 
 
@@ -259,7 +259,7 @@ class PluginChain(_Plugin, threading.Thread):
                 state.update(ret_state)
         return frame, state
 
-    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, stores):
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, storem):
         if self.threaded:
             ret = self._res_queue.get()
             # re-raise exceptions (such as PluginFinished) back to the main thread
@@ -279,8 +279,7 @@ class PluginChain(_Plugin, threading.Thread):
         elif isinstance(ret, np.ndarray):
             frame = ret
         if ret_state:
-            for s in stores:
-                s.store(self.identifier, frame, frame_number, frame_count, frame_time, current_time, ret_state)
+            storem.store(self.identifier, frame, frame_number, frame_count, frame_time, current_time, ret_state)
 
         if self.return_frame and self.return_state:
             return frame, ret_state
@@ -294,7 +293,7 @@ class PluginChain(_Plugin, threading.Thread):
 
 class BlockingPlugin(_Plugin):
 
-    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, stores):
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, storem):
         ret = self.process_frame(frame, frame_number, frame_count, frame_time, current_time, state)
         if ret is not None:
             ret_state = {}
@@ -305,8 +304,7 @@ class BlockingPlugin(_Plugin):
             elif isinstance(ret, np.ndarray):
                 frame = ret
             if ret_state:
-                for s in stores:
-                    s.store(self.identifier, frame, frame_number, frame_count, frame_time, current_time, ret_state)
+                storem.store(self.identifier, frame, frame_number, frame_count, frame_time, current_time, ret_state)
             return frame, ret_state
         return None
 
@@ -348,7 +346,7 @@ class NonBlockingPlugin(_Plugin, threading.Thread):
         self._arg_queue.put(None)
 #        self.join()
     
-    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, stores):
+    def push_frame(self, frame, frame_number, frame_count, frame_time, current_time, state, storem):
         """push a frame to the worker queue.
 
         Returns False if the worker thread is still processing the last frame.
@@ -370,8 +368,7 @@ class NonBlockingPlugin(_Plugin, threading.Thread):
             elif isinstance(ret, np.ndarray):
                 frame = ret
             if ret_state:
-                for s in stores:
-                    s.store(self.identifier, frame, frame_number, frame_count, frame_time, current_time, ret_state)
+                storem.store(self.identifier, frame, frame_number, frame_count, frame_time, current_time, ret_state)
             return frame, ret_state
         except Queue.Empty:
             # we are still busy
