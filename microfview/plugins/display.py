@@ -77,30 +77,6 @@ class DisplayPlugin(BlockingPlugin, FrameStore):
         if self.visible:
             cv2.destroyWindow(self._window_name)
 
-    def _draw_state(self, frame, val, M):
-        if isinstance(val, ContourType):
-            if M is not None:
-                val = val.transform(M)
-            # contours are drawn in red
-            cv2.circle(frame, (int(val.x),int(val.y)),2,(255,0,255),1)
-            cv2.drawContours(frame, [val.pts], 0, (255,0,255), 1)
-        elif isinstance(val, (TrackedObjectType, DetectedObjectType)):
-            if M is not None:
-                val = val.transform(M)
-            # objects in green
-            if getattr(val, "unit", UNIT_PIXELS) == UNIT_PIXELS:
-                cv2.circle(frame, (int(val.x),int(val.y)),3,(0,255,0),2)
-        elif isinstance(val, PointArrayType):
-            if M is not None:
-                val = val.transform(M)
-            if set_color is not None:
-                r,c = val.y, val.x
-                if is_color(frame):
-                    # draw in yellow
-                    set_color(frame, (r,c), (0,255,255))
-                else:
-                    set_color(frame, (r,c), 255)
-
     def process_frame(self, frame, frame_number, frame_count, frame_time, current_time, state):
         if self.visible:
             img = frame if not self._show_original_frame else state['FRAME_ORIGINAL']
@@ -108,23 +84,12 @@ class DisplayPlugin(BlockingPlugin, FrameStore):
                 M = state['FRAME_TRANSFORM']
             else:
                 M = None
-            for key in SPECIAL_STATE_KEYS:
-                try:
-                    obj = state[key]
-                    self._draw_state(img, obj, M)
-                except KeyError:
-                    pass
+            draw_all_state(img, state, M)
             cv2.imshow(self._window_name, img)
 
     def store_state(self, callback_name, buf, frame_number, frame_count, frame_timestamp, now, state):
         if self.visible:
-            M = state.get('FRAME_TRANSFORM', None)
-            for key in SPECIAL_STATE_KEYS:
-                try:
-                    obj = state[key]
-                    self._draw_state(self.__last_img, obj, M)
-                except KeyError:
-                    pass
+            draw_all_state(self.__last_img, state, state.get('FRAME_TRANSFORM', None))
 
     def store_begin_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
         if self.visible:
