@@ -319,6 +319,9 @@ class Microfview(threading.Thread):
                 if self._stop_frame and (self.frame_count > self._stop_frame):
                     self.stop()
 
+                if last_key == ord('Q'):
+                    self.stop()
+
                 with self._lock:
                     if not self._run:
                         # this is an error, we should only exit the main loop at the top via stop()
