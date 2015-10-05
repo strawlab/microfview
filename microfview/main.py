@@ -246,7 +246,7 @@ class Microfview(threading.Thread):
                 finished_plugins = []
                 now = time.time()
 
-                self._framestore.begin_frame(frame, frame_number, self.frame_count, frame_timestamp, now)
+                self._framestore.begin_frame(frame, frame_number, self.frame_count, frame_timestamp, now, last_key)
 
                 for plugin in self._plugins:
                     if self.frame_number_current % plugin.every == 0:

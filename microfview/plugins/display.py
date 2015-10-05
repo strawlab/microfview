@@ -91,10 +91,11 @@ class DisplayPlugin(BlockingPlugin, FrameStore):
         if self.visible:
             draw_all_state(self.__last_img, state, state.get('FRAME_TRANSFORM', None))
 
-    def store_begin_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
+    def store_begin_frame(self, buf, frame_number, frame_count, frame_timestamp, now, key):
         if self.visible:
             self.__last_img = buf
 
     def store_end_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
         if self.visible:
             cv2.imshow(self._window_name, self.__last_img)
+

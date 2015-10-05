@@ -113,7 +113,7 @@ class FrameStore(object):
     def store_close(self):
         pass
 
-    def store_begin_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
+    def store_begin_frame(self, buf, frame_number, frame_count, frame_timestamp, now, key):
         pass
 
     def store_end_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
@@ -142,9 +142,9 @@ class FrameStoreManager(object):
             for s in self._framestores:
                 s.store_state(callback_name, buf, frame_number, frame_count, frame_timestamp, now, state)
 
-    def begin_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
+    def begin_frame(self, buf, frame_number, frame_count, frame_timestamp, now, key):
         for s in self._framestores:
-            s.store_begin_frame(buf, frame_number, frame_count, frame_timestamp, now)
+            s.store_begin_frame(buf, frame_number, frame_count, frame_timestamp, now, key)
 
     def end_frame(self, buf, frame_number, frame_count, frame_timestamp, now):
         for s in self._framestores:
