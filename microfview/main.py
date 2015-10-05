@@ -66,6 +66,7 @@ class Microfview(threading.Thread):
         self._display_plugins = []
 
         self._waitkey_delay = 0 if single_frame_step else 1
+        self._key_handler = None
 
         self.finished = False
 
@@ -87,6 +88,12 @@ class Microfview(threading.Thread):
         from .util import get_argument_parser
         parser = get_argument_parser()
         return Microfview.new_from_commandline_args(parser.parse_args(), cap_fallback=cap_fallback, add_display_plugin=add_display_plugin)
+
+    def attach_key_handler(self, func):
+        """Attaches a function that returns keypresses (or 0xFF if no key was pressed)"""
+        if self._key_handler is not None:
+            raise ValueError("only one additional (to opencv waitkey) key handler supported")
+        self._key_handler = func
 
     def attach_display_plugin(self, plugin=None):
         """Attaches a display plugin to be called after every other plugin has
@@ -297,6 +304,15 @@ class Microfview(threading.Thread):
                         self._profile_timestore[et].append(execution_times[et])
                     self._profile(execution_times, self._profile_timestore)
 
+                if call_cvwaitkey:
+                    last_key = 0xFF & cv2.waitKey(self._waitkey_delay)
+                elif self._waitkey_delay == 0:
+                    raw_input('Press key to continue')
+                if (self._key_handler is not None) and (last_key == 0xFF):
+                    last_key = self._key_handler()
+
+                self._framestore.end_frame(frame, frame_number, self.frame_count, frame_timestamp, now)
+
                 if not self._plugins:
                     self.stop()
 
@@ -305,16 +321,9 @@ class Microfview(threading.Thread):
 
                 with self._lock:
                     if not self._run:
+                        # this is an error, we should only exit the main loop at the top via stop()
                         logger.info("exiting main loop")
                         break
-
-                if call_cvwaitkey:
-                    last_key = 0xFF & cv2.waitKey(self._waitkey_delay)
-                elif self._waitkey_delay == 0:
-                    raw_input('Press key to continue')
-
-                self._framestore.end_frame(frame, frame_number, self.frame_count, frame_timestamp, now)
-
 
         finally:
             # stop the plugins
