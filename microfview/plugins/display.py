@@ -11,13 +11,47 @@ from ..store import FrameStore, SPECIAL_STATE_KEYS, TrackedObjectType, DetectedO
 from ..util import is_color
 
 
+def draw_state(frame, val, M):
+    if isinstance(val, ContourType):
+        if M is not None:
+            val = val.transform(M)
+        # contours are drawn in red
+        cv2.circle(frame, (int(val.x),int(val.y)),2,(255,0,255),1)
+        cv2.drawContours(frame, [val.pts], 0, (255,0,255), 1)
+    elif isinstance(val, (TrackedObjectType, DetectedObjectType)):
+        if M is not None:
+            val = val.transform(M)
+        # objects in green
+        if getattr(val, "unit", UNIT_PIXELS) == UNIT_PIXELS:
+            cv2.circle(frame, (int(val.x),int(val.y)),3,(0,255,0),2)
+    elif isinstance(val, PointArrayType):
+        if M is not None:
+            val = val.transform(M)
+        if set_color is not None:
+            r,c = val.y, val.x
+            if is_color(frame):
+                # draw in yellow
+                set_color(frame, (r,c), (0,255,255))
+            else:
+                set_color(frame, (r,c), 255)
+
+
+def draw_all_state(img, state, M):
+    for key in SPECIAL_STATE_KEYS:
+        try:
+            obj = state[key]
+            draw_state(img, obj, M)
+        except KeyError:
+            pass
+
+
 class DisplayPlugin(BlockingPlugin, FrameStore):
 
-    def __init__(self, window_name, show_original_frame=False, every=1):
+    def __init__(self, window_name, original_frame=False, every=1):
         super(DisplayPlugin, self).__init__(every=every)
         self.shows_windows = True
         self.human_name = "%s(%s)" % (self.__class__.__name__, window_name)
-        self._show_original_frame = show_original_frame
+        self._show_original_frame = original_frame
         self.__window_name = window_name
 
         # in main operation we are called via the framestore interface

@@ -29,14 +29,14 @@ if __name__ == "__main__":
     fview = Microfview.new_from_commandline(cap_fallback=get_capture_object("synth:class=dot:bg=graffiti.png"))
 
     blue = PluginChain(ChannelSeparator(0),
-                       DisplayPlugin('blue', show_original_frame=False),
+                       DisplayPlugin('blue', original_frame=False),
                        Slow())
     fview.attach_parallel_plugin(blue)
     green = PluginChain(ChannelSeparator(1),
-                        DisplayPlugin('green', show_original_frame=False))
+                        DisplayPlugin('green', original_frame=False))
     fview.attach_parallel_plugin(green)
     red = PluginChain(ChannelSeparator(2),
-                      DisplayPlugin('red', show_original_frame=False),
+                      DisplayPlugin('red', original_frame=False),
                       Slow())
     fview.attach_parallel_plugin(red)
 

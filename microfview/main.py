@@ -95,7 +95,7 @@ class Microfview(threading.Thread):
         If no plugin is given, the default DisplayPlugin is used.
         """
         if plugin is None:
-            plugin = DisplayPlugin('microfview', show_original_frame=True, every=1)
+            plugin = DisplayPlugin('microfview', original_frame=True, every=1)
         self._display_plugins.append(plugin)
 
     def attach_profiler(self, callback_func):
