@@ -39,6 +39,8 @@ def get_argument_parser():
                         help='single frame step')
     parser.add_argument('--stop-frame', type=int, default=0,
                         help='stop after this many frames')
+    parser.add_argument('--seek', action='store_true', default=False,
+                        help='make videos seekable')
     return parser
 
 def parse_config_file(filename):

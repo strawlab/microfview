@@ -23,6 +23,9 @@ import cv2
 import numpy as np
 
 
+MESSAGE_SEEK = 0
+
+
 class PluginFinished(Exception):
     pass
 

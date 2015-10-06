@@ -15,7 +15,7 @@ import numpy as np
 import logging
 logger = logging.getLogger('microfview')
 
-from .plugin import PluginFinished, FuncWrapperPlugin
+from .plugin import PluginFinished, FuncWrapperPlugin, MESSAGE_SEEK
 from .plugins.display import DisplayPlugin
 from .store import FrameStoreManager, FrameStore
 
@@ -82,7 +82,7 @@ class Microfview(threading.Thread):
         if args.print_fps:
             obj.attach_profiler(print_mean_fps)
         if add_display_plugin and (not args.hide):
-            obj.attach_display_plugin()
+            obj.attach_display_plugin(enable_seek=args.seek)
         return obj
 
     @classmethod
@@ -97,14 +97,14 @@ class Microfview(threading.Thread):
             raise ValueError("only one additional (to opencv waitkey) key handler supported")
         self._key_handler = func
 
-    def attach_display_plugin(self, plugin=None):
+    def attach_display_plugin(self, plugin=None, enable_seek=False):
         """Attaches a display plugin to be called after every other plugin has
         been called.
 
         If no plugin is given, the default DisplayPlugin is used.
         """
         if plugin is None:
-            plugin = DisplayPlugin('microfview', original_frame=True, every=1)
+            plugin = DisplayPlugin('microfview', original_frame=True, every=1, seek=enable_seek)
         if not isinstance(plugin, FrameStore):
             raise ValueError('display plugins must be subclasses of FrameStore')
         logging.info('adding display plugin: %r' % plugin)
@@ -214,6 +214,9 @@ class Microfview(threading.Thread):
                 # grab frame
                 now0 = time.time()
                 try:
+                    if (msg_type == MESSAGE_SEEK) and self.frame_capture.supports_seeking:
+                        self.frame_number_current = msg - 1
+                        self.frame_capture.seek_frame(msg)
                     frame = self.frame_capture.grab_next_frame()
                     execution_times['Acquire'] = time.time() - now0
                 except EOFError as e:

@@ -6,7 +6,7 @@ try:
 except ImportError:
     set_color = None
 
-from ..plugin import BlockingPlugin
+from ..plugin import BlockingPlugin, MESSAGE_SEEK
 from ..store import FrameStore, SPECIAL_STATE_KEYS, TrackedObjectType, DetectedObjectType, ContourType, UNIT_PIXELS, PointArrayType
 from ..util import is_color
 
@@ -47,11 +47,13 @@ def draw_all_state(img, state, M):
 
 class DisplayPlugin(BlockingPlugin, FrameStore):
 
-    def __init__(self, window_name, original_frame=False, every=1):
+    def __init__(self, window_name, original_frame=False, every=1, seek=False):
         super(DisplayPlugin, self).__init__(every=every)
         self.shows_windows = True
         self.human_name = "%s(%s)" % (self.__class__.__name__, window_name)
         self._show_original_frame = original_frame
+        self._seek = seek
+        self._seek_frame_max = None
         self.__window_name = window_name
 
         # in main operation we are called via the framestore interface
@@ -59,6 +61,10 @@ class DisplayPlugin(BlockingPlugin, FrameStore):
 
         if set_color is None:
             self.logger.warn('displaying point arrays disabled due to missing scikit-image')
+
+    def _on_seek(self, v):
+        fn = (v/255.0) * self._seek_frame_max
+        self.send_message(MESSAGE_SEEK, int(fn))
 
     def start(self, capture_object):
         # wait until here to get the window name because it depends on the uid
@@ -72,6 +78,12 @@ class DisplayPlugin(BlockingPlugin, FrameStore):
                     h *= sf
                     w *= sf
                     cv2.resizeWindow(self._window_name, int(w), int(h))
+            if self._seek and capture_object.supports_seeking:
+                self._seek_frame_max = capture_object.frame_count
+                cv2.createTrackbar("seek", self._window_name, 0, 255, self._on_seek)
+        elif self._seek:
+            self.logger.info("seeking disabled as we are hidden")
+            self._seek = False
 
     def stop(self):
         if self.visible:
