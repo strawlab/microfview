@@ -61,6 +61,8 @@ class OpenCVCapture(CaptureBase):
         if is_file:
             self.frame_count = self._capture.get(getattr(cv2,"CAP_PROP_FRAME_COUNT",7))
             self.filename = os.path.abspath(identifier)
+            self.supports_seeking = True
+            self._log.warn("seeking is not reliable on some videos in opencv")
         self.noncritical_errors = VideoDeviceReadError,
 
         if np.isnan(self.fps):
