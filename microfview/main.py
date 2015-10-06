@@ -17,7 +17,7 @@ logger = logging.getLogger('microfview')
 
 from .plugin import PluginFinished, FuncWrapperPlugin
 from .plugins.display import DisplayPlugin
-from .store import FrameStoreManager
+from .store import FrameStoreManager, FrameStore
 
 # helper function for frame_capture checks
 def _has_method(obj, method):
@@ -103,6 +103,9 @@ class Microfview(threading.Thread):
         """
         if plugin is None:
             plugin = DisplayPlugin('microfview', original_frame=True, every=1)
+        if not isinstance(plugin, FrameStore):
+            raise ValueError('display plugins must be subclasses of FrameStore')
+        logging.info('adding display plugin: %r' % plugin)
         self._display_plugins.append(plugin)
 
     def attach_profiler(self, callback_func):
