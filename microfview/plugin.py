@@ -65,6 +65,7 @@ class _Plugin(object):
 
         self._t0 = self._t1 = np.nan
         self._uid = "UNKNOWN"
+        self._msgq = None
 
     @property
     def identifier(self):
@@ -90,6 +91,12 @@ class _Plugin(object):
 
     def set_visible(self, v):
         self.visible = v
+
+    def set_message_queue(self, q):
+        self._msgq = q
+
+    def send_message(self, msg_type, msg_val):
+        self._msgq.put((self._uid,msg_type,msg_val))
 
     def debug_window_name(self, name):
         if self._uid == "UNKNOWN":

@@ -4,10 +4,10 @@ Provides Microfview class, which manages the frame capture
 and delegates frames to all plugins.
 
 """
-import bisect
 import threading
 import time
 import collections
+import Queue
 
 import cv2
 import numpy as np
@@ -67,6 +67,8 @@ class Microfview(threading.Thread):
 
         self._waitkey_delay = 0 if single_frame_step else 1
         self._key_handler = None
+
+        self._msg_queue = Queue.Queue()
 
         self.finished = False
 
@@ -176,6 +178,7 @@ class Microfview(threading.Thread):
             plugin.set_debug(self._debug)
             plugin.set_visible(self._visible)
             plugin.start(self.frame_capture)
+            plugin.set_message_queue(self._msg_queue)
 
             schema[plugin.identifier] = plugin.get_schema()
 
@@ -203,9 +206,13 @@ class Microfview(threading.Thread):
             last_key = 0xFF
 
             while self._run:
-                now0 = time.time()
+                try:
+                    sender,msg_type,msg = self._msg_queue.get_nowait()
+                except Queue.Empty:
+                    msg_type = None
 
                 # grab frame
+                now0 = time.time()
                 try:
                     frame = self.frame_capture.grab_next_frame()
                     execution_times['Acquire'] = time.time() - now0
