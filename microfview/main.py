@@ -123,7 +123,7 @@ class Microfview(threading.Thread):
         frame to save any relevant data for that frame"""
         self._framestore.add(obj)
 
-    def attach_callback(self, callback_func, every=1):
+    def attach_callback(self, callback_func, every=1, shows_windows=False):
         """Attaches a callback function, which is called on every Nth frame.
 
         Args:
@@ -141,6 +141,7 @@ class Microfview(threading.Thread):
             raise ValueError("every has to be bigger than 0")
 
         plug = FuncWrapperPlugin(callback_func, callback_func.func_name, every)
+        plug.shows_windows = shows_windows
         if plug in self._plugins:
             raise ValueError("callback_func + every combination already exists")
         self.attach_plugin(plug)
@@ -170,6 +171,10 @@ class Microfview(threading.Thread):
 
     def run(self):
         """main loop. do not call directly."""
+        # if there are no plugins then add a fake one so we can at least see the capture source
+        if not self._plugins and self._display_plugins:
+            self.attach_callback(lambda *arg: None, shows_windows=True)
+
         # start all plugins
         schema = {}
         for i,plugin in enumerate(self._plugins + self._display_plugins):
